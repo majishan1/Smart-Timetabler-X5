@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Home Screen</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue-primary: #4F46E5;
+      --blue-light: #818CF8;
+      --green-accent: #22C55E;
+      --red-accent: #EF4444;
+      --text-dark: #1E1B4B;
+      --text-medium: #6B7280;
+      --text-light: #9CA3AF;
+      --surface: #FFFFFF;
+      --surface-alt: #F9FAFB;
+      --border: #E5E7EB;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 16px rgba(79,70,229,0.12);
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(135deg, #C7D2FE 0%, #E0E7FF 50%, #EDE9FE 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .phone {
+      width: 390px;
+      height: 844px;
+      background: var(--surface-alt);
+      border-radius: 44px;
+      box-shadow: 0 30px 80px rgba(30,27,75,0.28), 0 0 0 1px rgba(255,255,255,0.6) inset;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Status Bar */
+    .status-bar {
+      background: var(--blue-primary);
+      padding: 12px 24px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: white;
+      flex-shrink: 0;
+    }
+    .status-time { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; }
+    .status-icons { display: flex; gap: 6px; align-items: center; }
+
+    /* Header Banner */
+    .header-banner {
+      background: var(--blue-primary);
+      padding: 14px 24px 20px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .header-banner::before {
+      content: ''; position: absolute; top: -30px; right: -30px;
+      width: 130px; height: 130px; background: rgba(255,255,255,0.06); border-radius: 50%;
+    }
+    .header-banner::after {
+      content: ''; position: absolute; bottom: -20px; left: 20px;
+      width: 80px; height: 80px; background: rgba(255,255,255,0.04); border-radius: 50%;
+    }
+    .header-date { font-size: 12px; opacity: 0.75; margin-bottom: 4px; letter-spacing: 0.5px; }
+    .header-time { font-family: 'DM Mono', monospace; font-size: 32px; font-weight: 700; letter-spacing: -1px; margin-bottom: 16px; }
+
+    .quick-row { display: flex; gap: 10px; position: relative; z-index: 1; }
+    .quick-pill {
+      flex: 1; background: rgba(255,255,255,0.15); border-radius: 12px;
+      padding: 10px 14px; border: 1px solid rgba(255,255,255,0.18);
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .quick-pill-label { font-size: 10px; opacity: 0.7; letter-spacing: 0.6px; text-transform: uppercase; }
+    .quick-pill-value { font-size: 16px; font-weight: 700; line-height: 1; }
+    .quick-pill-sub   { font-size: 10px; opacity: 0.6; margin-top: 1px; }
+    .quick-pill.next-event { background: rgba(255,255,255,0.92); border-color: transparent; }
+    .quick-pill.next-event .quick-pill-label { color: var(--text-medium); opacity: 1; }
+    .quick-pill.next-event .quick-pill-value { color: var(--blue-primary); font-size: 13px; font-weight: 600; }
+    .quick-pill.next-event .quick-pill-sub   { color: var(--red-accent); opacity: 1; font-weight: 500; }
+
+    /* Scroll Content */
+    .scroll-content {
+      flex: 1; overflow-y: auto; padding: 16px 18px;
+      display: flex; flex-direction: column; gap: 14px; scrollbar-width: none;
+    }
+    .scroll-content::-webkit-scrollbar { display: none; }
+
+    /* Quick Add */
+    .quick-add {
+      background: var(--surface); border-radius: 16px; padding: 12px 14px;
+      box-shadow: var(--shadow-sm); border: 1.5px solid var(--border);
+      transition: border-color 0.2s, box-shadow 0.2s;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .quick-add:focus-within { border-color: var(--blue-light); box-shadow: var(--shadow-md); }
+    .quick-add input[type="text"] {
+      width: 100%; border: none; outline: none; font-family: 'DM Sans', sans-serif;
+      font-size: 14px; color: var(--text-dark); background: transparent;
+    }
+    .quick-add input[type="text"]::placeholder { color: var(--text-light); }
+
+    .add-row { display: flex; gap: 8px; align-items: center; }
+    .add-time-input {
+      font-family: 'DM Mono', monospace; font-size: 12px; border: 1px solid var(--border);
+      border-radius: 8px; padding: 5px 8px; color: var(--text-medium);
+      outline: none; background: var(--surface-alt); cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .add-time-input:focus { border-color: var(--blue-light); }
+
+    .color-dot-group { display: flex; gap: 6px; align-items: center; margin-left: auto; }
+    .color-dot {
+      width: 15px; height: 15px; border-radius: 50%; cursor: pointer;
+      border: 2px solid transparent; transition: transform 0.15s, border-color 0.15s;
+    }
+    .color-dot:hover { transform: scale(1.2); }
+    .color-dot.selected { border-color: var(--text-dark); transform: scale(1.15); }
+    .dot-c-green  { background: var(--green-accent); }
+    .dot-c-blue   { background: var(--blue-primary); }
+    .dot-c-red    { background: var(--red-accent); }
+    .dot-c-yellow { background: #F59E0B; }
+
+    .add-btn {
+      background: var(--blue-primary); color: white; border: none;
+      border-radius: 10px; padding: 6px 16px; font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .add-btn:hover  { background: #3730A3; }
+    .add-btn:active { transform: scale(0.96); }
+
+    /* Tab Bar */
+    .tab-bar {
+      display: flex; background: var(--surface);
+      border-radius: 12px; padding: 4px; gap: 2px;
+      box-shadow: var(--shadow-sm);
+    }
+    .tab-btn {
+      flex: 1; padding: 7px 0; font-family: 'DM Sans', sans-serif;
+      font-size: 12px; font-weight: 600; border: none; background: transparent;
+      color: var(--text-light); cursor: pointer; border-radius: 9px;
+      transition: background 0.2s, color 0.2s;
+    }
+    .tab-btn.active { background: var(--blue-primary); color: white; }
+
+    /* Section Title */
+    .section-title {
+      font-size: 13px; font-weight: 700; color: var(--text-dark);
+      letter-spacing: 0.4px; text-transform: uppercase;
+    }
+
+    /* Schedule List */
+    .schedule-list {
+      background: var(--surface); border-radius: 18px;
+      box-shadow: var(--shadow-sm); overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+
+    .schedule-item {
+      display: flex; align-items: stretch;
+      padding: 14px 16px; gap: 14px;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+      cursor: default;
+      animation: slideIn 0.35s ease both;
+    }
+    .schedule-item:last-child { border-bottom: none; }
+    .schedule-item:hover { background: #F9FAFB; }
+    .schedule-item.done { opacity: 0.48; }
+    .schedule-item.done .schedule-title { text-decoration: line-through; }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-12px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; max-height: 100px; padding-top: 14px; padding-bottom: 14px; }
+      to   { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; }
+    }
+    .removing { animation: fadeOut 0.3s ease forwards !important; overflow: hidden; }
+
+    .schedule-time {
+      display: flex; flex-direction: column; align-items: flex-end;
+      min-width: 44px; padding-top: 2px; flex-shrink: 0;
+    }
+    .schedule-time-main {
+      font-family: 'DM Mono', monospace; font-size: 12px;
+      font-weight: 500; color: var(--text-medium); line-height: 1;
+    }
+
+    .schedule-dot-line { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+    .schedule-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 3px; flex-shrink: 0; }
+    .dot-green  { background: var(--green-accent); box-shadow: 0 0 0 3px rgba(34,197,94,0.15); }
+    .dot-blue   { background: var(--blue-primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.15); }
+    .dot-red    { background: var(--red-accent);   box-shadow: 0 0 0 3px rgba(239,68,68,0.15); }
+    .dot-yellow { background: #F59E0B;              box-shadow: 0 0 0 3px rgba(245,158,11,0.15); }
+    .schedule-dot-line .vline {
+      width: 2px; flex: 1; background: var(--border); margin: 4px 0; border-radius: 2px;
+    }
+
+    .schedule-info { flex: 1; min-width: 0; }
+    .schedule-title {
+      font-size: 14px; font-weight: 600; color: var(--text-dark);
+      margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .schedule-sub {
+      font-size: 12px; color: var(--text-medium);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .schedule-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 6px;
+      font-size: 10px; font-weight: 600; margin-top: 4px;
+    }
+    .badge-red { background: rgba(239,68,68,0.1); color: var(--red-accent); }
+
+    .schedule-actions {
+      display: flex; gap: 6px; align-items: center; flex-shrink: 0; align-self: center;
+    }
+    .check-btn {
+      width: 22px; height: 22px; border-radius: 50%; border: none;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: transform 0.15s, background 0.2s; flex-shrink: 0;
+    }
+    .check-btn:hover { transform: scale(1.15); }
+    .check-btn.done-btn    { background: var(--green-accent); }
+    .check-btn.pending-btn { background: var(--border); }
+
+    .del-btn {
+      width: 18px; height: 18px; border-radius: 50%; border: none;
+      background: transparent; color: var(--text-light); font-size: 13px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.15s, color 0.15s; line-height: 1;
+    }
+    .schedule-item:hover .del-btn { opacity: 1; }
+    .del-btn:hover { color: var(--red-accent); }
+
+    .empty-state {
+      padding: 30px 16px; text-align: center; color: var(--text-light); font-size: 13px;
+    }
+
+    /* Navigation Bar */
+    .nav-bar {
+      background: var(--surface); border-top: 1px solid var(--border);
+      padding: 10px 0 20px; display: flex; justify-content: space-around;
+      align-items: center; flex-shrink: 0;
+    }
+    .nav-item {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 4px; cursor: pointer; flex: 1; transition: opacity 0.2s;
+    }
+    .nav-item:hover { opacity: 0.7; }
+    .nav-icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
+    .nav-label { font-size: 10px; font-weight: 500; color: var(--text-light); }
+    .nav-item.active .nav-label { color: var(--blue-primary); }
+
+    .nav-center-btn {
+      width: 50px; height: 50px; background: var(--blue-primary); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 14px rgba(79,70,229,0.45); flex-shrink: 0;
+      cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .nav-center-btn:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(79,70,229,0.55); }
+
+    .icon { fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .icon-active { stroke: var(--blue-primary); }
+    .icon-muted  { stroke: var(--text-light); }
+    .icon-white  { stroke: white; }
+
+    /* Toast */
+    .toast {
+      position: absolute; bottom: 90px; left: 50%;
+      transform: translateX(-50%) translateY(16px);
+      background: #1E1B4B; color: white; padding: 9px 20px;
+      border-radius: 24px; font-size: 12px; font-weight: 500;
+      opacity: 0; transition: opacity 0.25s, transform 0.25s;
+      pointer-events: none; white-space: nowrap; z-index: 200;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <span class="status-time" id="clock">08:30</span>
+    <div class="status-icons">
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="white">
+        <rect x="0" y="4" width="3" height="8" rx="1" opacity="0.4"/>
+        <rect x="4" y="2.5" width="3" height="9.5" rx="1" opacity="0.6"/>
+        <rect x="8" y="1" width="3" height="11" rx="1" opacity="0.8"/>
+        <rect x="12" y="0" width="3" height="12" rx="1"/>
+      </svg>
+      <svg width="15" height="12" viewBox="0 0 15 12" fill="none">
+        <path d="M7.5 2.5C9.5 2.5 11.3 3.3 12.6 4.6L14 3.2C12.3 1.5 10 0.5 7.5 0.5C5 0.5 2.7 1.5 1 3.2L2.4 4.6C3.7 3.3 5.5 2.5 7.5 2.5Z" fill="white" opacity="0.5"/>
+        <path d="M7.5 5.5C8.7 5.5 9.8 6 10.6 6.8L12 5.4C10.8 4.2 9.2 3.5 7.5 3.5C5.8 3.5 4.2 4.2 3 5.4L4.4 6.8C5.2 6 6.3 5.5 7.5 5.5Z" fill="white" opacity="0.75"/>
+        <circle cx="7.5" cy="10" r="1.5" fill="white"/>
+      </svg>
+      <span style="font-size:11px;opacity:0.8">14°C</span>
+    </div>
+  </div>
+
+  <!-- Header Banner -->
+  <div class="header-banner">
+    <div class="header-date" id="header-date">Monday, Oct 28</div>
+    <div class="header-time" id="header-time">08:30 AM</div>
+    <div class="quick-row">
+      <div class="quick-pill">
+        <div class="quick-pill-label">Pending</div>
+        <div class="quick-pill-value" id="pending-count">3</div>
+        <div class="quick-pill-sub">tasks left</div>
+      </div>
+      <div class="quick-pill">
+        <div class="quick-pill-label">Done</div>
+        <div class="quick-pill-value" id="done-count">1</div>
+        <div class="quick-pill-sub">completed</div>
+      </div>
+      <div class="quick-pill next-event" style="flex:2">
+        <div class="quick-pill-label">Next Event</div>
+        <div class="quick-pill-value">1:00 PM</div>
+        <div class="quick-pill-sub">⚠ Next Deadline</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scroll Content -->
+  <div class="scroll-content">
+
+    <!-- Quick Add -->
+    <div class="quick-add">
+      <input type="text" id="todo-input" placeholder="+ Quick add to-do item..." maxlength="50" autocomplete="off" />
+      <div class="add-row">
+        <input type="time" class="add-time-input" id="todo-time" value="09:00" />
+        <div class="color-dot-group">
+          <div class="color-dot dot-c-blue selected"  data-color="blue"></div>
+          <div class="color-dot dot-c-green"           data-color="green"></div>
+          <div class="color-dot dot-c-red"             data-color="red"></div>
+          <div class="color-dot dot-c-yellow"          data-color="yellow"></div>
+        </div>
+        <button class="add-btn" id="add-btn">Add ＋</button>
+      </div>
+    </div>
+
+    <!-- Tab Filter -->
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="all">All</button>
+      <button class="tab-btn"        data-tab="pending">Pending</button>
+      <button class="tab-btn"        data-tab="done">Done ✓</button>
+    </div>
+
+    <!-- Section Title -->
+    <div class="section-title">Today's Schedule</div>
+
+    <!-- Schedule List -->
+    <div class="schedule-list" id="schedule-list"></div>
+
+    <div style="height:6px"></div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="nav-bar">
+    <div class="nav-item active">
+      <div class="nav-icon">
+        <svg class="icon icon-active" width="22" height="22" viewBox="0 0 24 24">
+          <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
+          <path d="M9 21V12h6v9"/>
+        </svg>
+      </div>
+      <span class="nav-label" style="color:var(--blue-primary)">Home</span>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">
+        <svg class="icon icon-muted" width="22" height="22" viewBox="0 0 24 24">
+          <rect x="3" y="4" width="18" height="18" rx="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8"  y1="2" x2="8"  y2="6"/>
+          <line x1="3"  y1="10" x2="21" y2="10"/>
+        </svg>
+      </div>
+      <span class="nav-label">Calendar</span>
+    </div>
+    <div class="nav-center-btn" id="center-btn">
+      <svg class="icon icon-white" width="24" height="24" viewBox="0 0 24 24">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5"  y1="12" x2="19" y2="12"/>
+      </svg>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">
+        <svg class="icon icon-muted" width="22" height="22" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="7" height="7" rx="1"/>
+          <rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3"  y="14" width="7" height="7" rx="1"/>
+          <rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+      </div>
+      <span class="nav-label">Tasks</span>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">
+        <svg class="icon icon-muted" width="22" height="22" viewBox="0 0 24 24">
+          <circle cx="12" cy="8" r="4"/>
+          <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+        </svg>
+      </div>
+      <span class="nav-label">Profile</span>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+  
+  let todos = [
+    { id:1, title:'Morning Gym Routine',               sub:'Skip this reminder',             time:'07:00', color:'green',  done:true  },
+    { id:2, title:'COMP10120: First year team project', sub:'Lecture Hall B · Nancy Rothwell', time:'10:00', color:'blue',   done:false },
+    { id:3, title:'Submit Project Proposal',            sub:'',                                time:'13:00', color:'red',    done:false, badge:'⚠ Deadline 1:00 PM' },
+  ];
+  let selectedColor = 'blue';
+  let currentTab    = 'all';
+  let nextId        = 4;
+
+ 
+  function updateClock() {
+    const now    = new Date();
+    const h      = String(now.getHours()).padStart(2,'0');
+    const m      = String(now.getMinutes()).padStart(2,'0');
+    const h12    = now.getHours() % 12 || 12;
+    const ampm   = now.getHours() >= 12 ? 'PM' : 'AM';
+    const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    document.getElementById('clock').textContent       = `${h}:${m}`;
+    document.getElementById('header-time').textContent = `${String(h12).padStart(2,'0')}:${m} ${ampm}`;
+    document.getElementById('header-date').textContent = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
+  }
+  updateClock();
+  setInterval(updateClock, 10000);
+
+  
+  function updateCounters() {
+    document.getElementById('pending-count').textContent = todos.filter(t => !t.done).length;
+    document.getElementById('done-count').textContent    = todos.filter(t =>  t.done).length;
+  }
+
+
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  function render() {
+    updateCounters();
+    const list = document.getElementById('schedule-list');
+    list.innerHTML = '';
+
+    let data = [...todos].sort((a,b) => a.time.localeCompare(b.time));
+    if (currentTab === 'pending') data = data.filter(t => !t.done);
+    if (currentTab === 'done')    data = data.filter(t =>  t.done);
+
+    if (!data.length) {
+      list.innerHTML = `<div class="empty-state">No items here 🎉</div>`;
+      return;
+    }
+
+    data.forEach((todo, idx) => {
+      const item = document.createElement('div');
+      item.className = 'schedule-item' + (todo.done ? ' done' : '');
+      item.dataset.id = todo.id;
+      item.style.animationDelay = (idx * 0.05) + 's';
+
+      item.innerHTML = `
+        <div class="schedule-time">
+          <span class="schedule-time-main">${esc(todo.time)}</span>
+        </div>
+        <div class="schedule-dot-line">
+          <div class="schedule-dot dot-${todo.color}"></div>
+          ${idx < data.length - 1 ? '<div class="vline"></div>' : ''}
+        </div>
+        <div class="schedule-info">
+          <div class="schedule-title">${esc(todo.title)}</div>
+          ${todo.sub   ? `<div class="schedule-sub">${esc(todo.sub)}</div>` : ''}
+          ${todo.badge ? `<div class="schedule-badge badge-red">${esc(todo.badge)}</div>` : ''}
+        </div>
+        <div class="schedule-actions">
+          <button class="check-btn ${todo.done ? 'done-btn' : 'pending-btn'}" title="${todo.done ? 'Undo' : 'Complete'}">
+            <svg class="icon icon-white" viewBox="0 0 12 12" width="12" height="12">
+              <polyline points="2,6 5,9 10,3"/>
+            </svg>
+          </button>
+          <button class="del-btn" title="Delete">✕</button>
+        </div>`;
+
+     
+      item.querySelector('.check-btn').addEventListener('click', e => {
+        e.stopPropagation();
+        const t = todos.find(x => x.id === todo.id);
+        if (t) { t.done = !t.done; render(); showToast(t.done ? '✅ Done!' : '🔄 Moved to pending'); }
+      });
+
+      
+      item.querySelector('.del-btn').addEventListener('click', e => {
+        e.stopPropagation();
+        item.classList.add('removing');
+        setTimeout(() => { todos = todos.filter(x => x.id !== todo.id); render(); showToast('🗑 Deleted'); }, 280);
+      });
+
+      list.appendChild(item);
+    });
+  }
+
+
+  function addTodo() {
+    const input  = document.getElementById('todo-input');
+    const timeEl = document.getElementById('todo-time');
+    const title  = input.value.trim();
+    if (!title) {
+      input.focus();
+      input.style.color = 'var(--red-accent)';
+      setTimeout(() => input.style.color = '', 800);
+      showToast('⚠ Please enter a task name');
+      return;
+    }
+    todos.push({ id: nextId++, title, sub:'', time: timeEl.value || '09:00', color: selectedColor, done: false });
+    input.value = '';
+    setTab('all');
+    render();
+    showToast('✨ Task added!');
+  }
+
+  document.getElementById('add-btn').addEventListener('click', addTodo);
+  document.getElementById('todo-input').addEventListener('keydown', e => { if (e.key === 'Enter') addTodo(); });
+
+ 
+  document.getElementById('center-btn').addEventListener('click', () => {
+    const inp = document.getElementById('todo-input');
+    inp.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    setTimeout(() => inp.focus(), 300);
+  });
+
+ 
+  document.querySelectorAll('.color-dot').forEach(dot => {
+    dot.addEventListener('click', () => {
+      document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
+      dot.classList.add('selected');
+      selectedColor = dot.dataset.color;
+    });
+  });
+
+ 
+  function setTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    render();
+  }
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => setTab(btn.dataset.tab)));
+
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._t);
+    t._t = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+ 
+  render();
+</script>
+</body>
+</html>
