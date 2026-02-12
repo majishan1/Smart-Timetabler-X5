@@ -5,6 +5,8 @@
  * min working demo (Timetable, Tasks, Deadlines).
  */
 
+ 
+
 require 'db_connect.php';
 
 try {
@@ -16,6 +18,7 @@ try {
     )";
     $conn->exec($sql_users);
     echo "Table 'Users' created.<br>";
+
 
     // 2. Events Table 
     $sql_events = "CREATE TABLE IF NOT EXISTS Events (

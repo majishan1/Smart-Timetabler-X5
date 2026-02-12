@@ -57,11 +57,12 @@ try {
     </ul>
 
     <hr>
-
+    <li><a href="home.php">Demo Home page</a></li>
     <h2>Link to database setup</h2>
     <ul>
         <li><a href="install.php">Re-run Database Setup (Reset Tables)</a></li>
     </ul>
 
+    
 </body>
 </html>
