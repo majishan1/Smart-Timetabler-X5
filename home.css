@@ -38,11 +38,17 @@ body {
   display: block;
 }
 
+#AddPage p {
+  font-size: 16px;
+  padding-top: 0;
+  background-color: aquamarine;
+}
+
 .background {
   position: fixed;
   width: 40%;
-  height: 65%;
-  top: 80px;
+  height: 70%;
+  top: 60px;
   left: 50%;
   transform: translateX(-50%);
   background-color: antiquewhite;
