@@ -1,5 +1,3 @@
-<<<<<<< Updated upstream
-=======
 <?php
 include 'db_connect.php';
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -22,7 +20,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 ?>
 
->>>>>>> Stashed changes
+
 <!doctype html>
 <html lang="en">
   <head>
@@ -49,24 +47,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
       <div id="AddPage">
         <h2 class="title">Add New Event</h2>
-        <div id="AddPage" , class="background">
-          <p>Event Title</p>
-          <input type="text" placeholder="e.g., Submit assignment" />
-          <p>Event Type</p>
-          <input type="text" placeholder="A selection bar?" />
-          <div class="row">
-            <p class="wide">Date & Start Time</p>
-            <p class="narrow">Duration (mins)</p>
-          </div>
-          <div class="row">
-            <input class="wide" type="datetime-local" />
-            <input class="narrow" placeholder="A selection bar of time." />
-          </div>
-          <p>Description / Location</p>
-          <textarea placeholder="Add details" rows="5"></textarea>
-          <p>Tags</p>
-          <input type="text" placeholder="A selection bar?" />
-          <button>Create Event</button>
+        <div class="background">
+          <form method="POST" action="">
+            <p>Event Title</p>
+            <input type="text" name="event_title" placeholder="e.g., Submit assignment" />
+            <p>Event Type</p>
+            <input type="text" name="event_type" placeholder="A selection bar?" />
+            <div class="row">
+              <p class="wide">Date & Start Time</p>
+              <p class="narrow">Duration (mins)</p>
+            </div>
+            <div class="row">
+              <input class="wide" type="datetime-local" name="date_time"/>
+              <input class="narrow" placeholder="Input Time" name="duration"/>
+            </div>
+            <p>Description / Location</p>
+            <textarea name="description" placeholder="Add details" rows="5"></textarea>
+            <p>Tags</p>
+            <input type="text" name="tags" placeholder="A selection bar?" />
+            <button type="submit">Create Event</button>
+          </form>
         </div>
       </div>
     </main>
