@@ -1,3 +1,28 @@
+<<<<<<< Updated upstream
+=======
+<?php
+include 'db_connect.php';
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+
+  $event_title = $_POST['event_title'];
+
+  // check if event_title is empty
+  if (empty($event_title)) {
+    echo "Please enter an event title!";
+  } else {
+    $event_type = $_POST['event_type'];  //might change to selection bar
+    $date_time = $_POST['date_time'];
+    $duration = $_POST['duration'];
+    $description = $_POST['description'];
+    $tags = $_POST['tags'];  //might change to selection bar
+  }
+
+  // SQL insert logic
+
+}
+?>
+
+>>>>>>> Stashed changes
 <!doctype html>
 <html lang="en">
   <head>
