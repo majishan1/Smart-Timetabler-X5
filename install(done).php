@@ -5,19 +5,18 @@
  * min working demo (Timetable, Tasks, Deadlines).
  */
 
- 
+
 
 require 'db_connect.php';
 
 try {
     // 1. Users Table
     $sql_users = "CREATE TABLE IF NOT EXISTS Users (
-        UserID INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        username VARCHAR(50) NOT NULL UNIQUE,
-        hashed_password VARCHAR(255) NOT NULL
+        UserID INT(10) UNSIGNED PRIMARY KEY,
+        user_name VARCHAR(100) NOT NULL
     )";
     $conn->exec($sql_users);
-    echo "Table 'Users' created.<br>";
+    echo "Table 'Users' Created succesffully .<br>";
 
 
     // 2. Events Table 
@@ -44,6 +43,7 @@ try {
         deadline DATETIME,      -- Used for 'Shows deadlines'
         FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
     )";
+
     $conn->exec($sql_todo);
     echo "Table 'ToDo' created .<br>";
 
