@@ -4,7 +4,6 @@
  */
 
 // 1. Define Constants (Required for Authenticator)
-// UPDATE THIS to your specific URL if needed, or keep as is if it works
 define("DEVELOPER_URL", "https://smarttimetabler.gt.tc/login.php");
 define("AUTHENTICATION_SERVICE_URL", "http://studentnet.cs.manchester.ac.uk/authenticate/");
 define("AUTHENTICATION_LOGOUT_URL", "http://studentnet.cs.manchester.ac.uk/systemlogout.php");
@@ -17,7 +16,7 @@ require_once("Authenticator.php");
 // If not logged in, this redirects them to the Uni login page automatically.
 Authenticator::validateUser();
 
-// 4. Connect to Database (THIS WAS MISSING!)
+
 require 'db_connect.php'; 
 
 // 5. Get User Data
@@ -28,7 +27,7 @@ $student_name = Authenticator::getFullName();
 $_SESSION['user_id'] = $student_id;
 
 // 7. Insert/Update User in Database
-// We use the correct PHP syntax: ->prepare and ->execute
+
 $sql = "INSERT IGNORE INTO Users (UserID, user_name) VALUES (:id, :name)";
 
 try {
