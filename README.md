@@ -1,5 +1,12 @@
 # Smart Timetabler X5
 
+## Python modules used
+
+Josh {
+    icalendar   : parsing .ics file                         -   used in:    ical_parser.py
+    requests    : getting information from .ics file URL    -   used in:    ical_parser.py
+    sys         : getting args from calls                   -   used int:   ical_parser.py
+}
 
 
 ## Getting started
