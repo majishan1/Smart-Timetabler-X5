@@ -13,9 +13,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $duration = $_POST['duration'];
     $description = $_POST['description'];
     $tags = $_POST['tags'];  //might change to selection bar
+    $is_complete = FALSE;
   }
 
   // SQL insert logic
+
+
 
 }
 ?>

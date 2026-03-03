@@ -10,7 +10,7 @@
 require 'db_connect.php';
 
 try {
-    // 1. Users Table
+    // Users Table
     $sql_users = "CREATE TABLE IF NOT EXISTS Users (
         UserID INT(10) UNSIGNED PRIMARY KEY,
         user_name VARCHAR(100) NOT NULL
@@ -19,28 +19,31 @@ try {
     echo "Table 'Users' Created succesffully .<br>";
 
 
-    // 2. Events Table 
+    // Events Table 
     $sql_events = "CREATE TABLE IF NOT EXISTS Events (
         EventID INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         UserID INT(6) UNSIGNED,
-        title VARCHAR(100) NOT NULL,
+        module VARCHAR(100) NOT NULL,
         start_time DATETIME,
         duration VARCHAR(50), 
-        type VARCHAR(50),       -- Used for 'Filtering tasks'
+        type VARCHAR(50),       
         is_complete BOOLEAN DEFAULT 0, -- Used for 'Rescheduling missed tasks'
+        staff VARCHAR(200),
+        location VARCHAR(200),
         FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
+  
     )";
     $conn->exec($sql_events);
     echo "Table 'Events' created.<br>";
 
-    // 3. ToDo Table
+    // ToDo Table
 
     $sql_todo = "CREATE TABLE IF NOT EXISTS ToDo (
         taskID INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         UserID INT(6) UNSIGNED,
         name VARCHAR(100) NOT NULL,
         description VARCHAR(255),
-        deadline DATETIME,      -- Used for 'Shows deadlines'
+        deadline DATETIME,      
         FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
     )";
 
