@@ -30,7 +30,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Smart Timetabler</title>
-    <link rel="stylesheet" , type="text/css" , href="home.css" />
+    <link rel="stylesheet" type="text/css" href="home.css" />
   </head>
 
   <body>
@@ -54,8 +54,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           <form method="POST" action="">
             <p>Event Title</p>
             <input type="text" name="event_title" placeholder="e.g., Submit assignment" />
-            <p>Event Type</p>
-            <input type="text" name="event_type" placeholder="A selection bar?" />
+            <label for="dropdown">Event Type</label><br>
+            <div class="row">
+              <select name="dropdown" id="dropdown" class="dropdowns wide">
+                <option value="" hidden selected disabled>-- Select an option --</option>
+                <option value="Event">Event</option>
+                <option value="Task">Task</option>
+              </select>
+              <div class="narrow"></div>
+            </div>
+            <div class="narrow"></div>
             <div class="row">
               <p class="wide">Date & Start Time</p>
               <p class="narrow">Duration (mins)</p>

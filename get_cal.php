@@ -14,8 +14,8 @@
     </head>
     <body>
         <div class='cal_form'>
-            <form action="get_cal.php" method="get">
-                <label for="calendar">Calendar URL: </label><br>
+            <form action="get_cal.php" method="get" id="cal-form">
+                <label for="cal-form">Calendar URL: </label><br>
                 <input type="text" id="cal" name="calendar"><br>
                 <input type="submit" value="Import Calendar">
             </form>
@@ -24,28 +24,25 @@
 </html>
 <?php
 
-
-    function verifyCalendarContent($url) {
-        $content = @file_get_contents($url, false, null, 0);
-
-        if ($content === false) {
-            return "Not a valid .ics file";
-        }
-        else if (strpos($content, 'BEGIN:VCALENDAR') !== false) {
-            return $url;
-        }
-        else {
-            return "Not a valid .ics file";
-        }
-    }
-
     if (isset($_GET['calendar'])) {
         $url = $_GET['calendar'];
         
-        if (filter_var($url, FILTER_VALIDATE_URL) && verifyCalendarContent($url) === $url) {
+        if (filter_var($url, FILTER_VALIDATE_URL)) {
             $safe_url = escapeshellarg($url);
-            $parser = shell_exec("python3 ical_parser.py $safe_url");
-            echo nl2br($parser);
+            $json_output = shell_exec("python3 ical_parser.py $safe_url");
+            
+            $dec_arr = json_decode($json_output, true);
+           // echo gettype($dec_arr);
+            foreach($dec_arr as $key => $out) {
+                echo ('UID: ' . $key . "<br>");
+                foreach($dec_arr[$key] as $header => $data) {
+                    echo ($header . ": " . $dec_arr[$key][$header] . "<br>");
+                }
+            }
+
+
+
+            //echo $decoded_string;
         }
         else {
             echo "Incorrect URL format";
