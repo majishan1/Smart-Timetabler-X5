@@ -3,7 +3,7 @@ import requests
 import datetime
 url = "https://scientia-eu-v4-3-api-d3-02.azurewebsites.net//api/ical/b5098763-4476-40a6-8d60-5a08e9c52964/3d1b5c6a-384f-b3d8-69f5-10a273bae423/timetable.ics"
 
-def parse_ical(url) -> dict:
+def parse_ical(url) -> list:
     all_events = []
 
 
@@ -23,7 +23,7 @@ def parse_ical(url) -> dict:
             # Calculate duration 
             duration_delta = raw_end - raw_start
             duration_mins = int(duration_delta.total_seconds() / 60)
-            duration_str = f"{duration_mins} mins"
+            duration_str = f"{duration_mins}"
             start = raw_start.strftime('%Y-%m-%d %H:%M:%S')
 
             raw_description = str(component.get('description', ''))
@@ -47,8 +47,10 @@ def parse_ical(url) -> dict:
             'location' : event_details.get('Location', 'Unknown'),
             'staff' : event_details.get('Staff Member', 'Unknown'),
             'unit_code' : event_details.get('Unit Code', 'Unknown'),
-            'directions' : event_details.get('Directions','Unknown')
-            }
+            'directions' : event_details.get('Directions','Unknown'),
+            'duration' : duration_str, # in minutes
+            'start' : start #datetime object
+             }
 
             
             all_events.append(event_data)
