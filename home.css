@@ -92,3 +92,14 @@ textarea {
   border-style: none;
   box-sizing: border-box;
 }
+
+.dropdowns {
+  height:fit-content;
+  margin-top: 20px;
+  padding: 8px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  border-style: none;
+  box-sizing: border-box;
+}
+
