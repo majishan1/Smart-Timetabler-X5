@@ -4,10 +4,14 @@ import json
 url = "https://scientia-eu-v4-3-api-d3-02.azurewebsites.net//api/ical/b5098763-4476-40a6-8d60-5a08e9c52964/3d1b5c6a-384f-b3d8-69f5-10a273bae423/timetable.ics"
 
 def parse_ical(url) -> list:
+    if not url.startswith(("http://", "https://")):
+        return 'Invalid URL protocol Provided'
     all_events = []
 
 
     response = requests.get(url) 
+    if b'BEGIN:VCALENDAR' not in response.content:
+            return 'Contents not in proper iCal format'
 
     cal = icalendar.Calendar.from_ical(response.content)
 
@@ -60,3 +64,4 @@ with open('timetable.json', 'w') as f:
     json.dump(my_events, f, indent=4)
     
 print(f"successfully saved {len(my_events)} events to timetable.json")
+
