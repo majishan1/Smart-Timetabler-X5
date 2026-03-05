@@ -1,6 +1,6 @@
 import icalendar
 import requests
-import datetime
+import json
 url = "https://scientia-eu-v4-3-api-d3-02.azurewebsites.net//api/ical/b5098763-4476-40a6-8d60-5a08e9c52964/3d1b5c6a-384f-b3d8-69f5-10a273bae423/timetable.ics"
 
 def parse_ical(url) -> list:
@@ -10,10 +10,6 @@ def parse_ical(url) -> list:
     response = requests.get(url) 
 
     cal = icalendar.Calendar.from_ical(response.content)
-
-
-
-
 
     for component in cal.walk():
         if component.name == "VEVENT":
@@ -56,4 +52,11 @@ def parse_ical(url) -> list:
             all_events.append(event_data)
             
     return(all_events)
-print(parse_ical(url))
+
+
+my_events = parse_ical(url)
+
+with open('timetable.json', 'w') as f:
+    json.dump(my_events, f, indent=4)
+    
+print(f"successfully saved {len(my_events)} events to timetable.json")
