@@ -50,6 +50,13 @@ try {
     $conn->exec($sql_todo);
     echo "Table 'ToDo' created .<br>";
 
+    $sql_Timetable_Links="CREATE TABLE IF NOT EXISTS Timetable_Links (
+        UserID INT(6) UNSIGNED PRIMARY KEY,
+        ical_url VARCHAR(700) NOT NULL,
+        last_synced DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
+    )";
+    $conn->exec($sql_Timetable_Links);
     echo "<hr><strong>Database Ready</strong>";
 
 } catch(PDOException $e) {

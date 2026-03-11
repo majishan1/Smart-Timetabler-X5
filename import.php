@@ -49,6 +49,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && !empty($_POST['ical_url'])) {
             try {
 
                 require 'db_connect.php'; 
+
+                // Save or update the users iCal URL for dynamic updating in the future 
+                $url_sql = "INSERT INTO Timetable_Links (UserID, ical_url) 
+                            VALUES (:uid, :url) 
+                            ON DUPLICATE KEY UPDATE ical_url = :url";
+                $url_stmt = $conn->prepare($url_sql);
+                $url_stmt->execute([
+                    ':uid' => $current_user_id,
+                    ':url' => $ical_url
+                ]);
                 
                 // 1. Prepare to check if the event already exists
                 $check_sql = "SELECT EventID FROM Events WHERE UserID = :uid AND module = :module AND start_time = :start_time";
