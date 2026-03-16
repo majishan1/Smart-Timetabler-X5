@@ -131,69 +131,78 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <!doctype html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Smart Timetabler</title>
     <link rel="stylesheet" type="text/css" href="home.css" />
-</head>
+  </head>
 
-<body>
-    <main>
-        <div id="HomePage" class="page">
-            <h2>Today</h2>
-            <p>
-                This is the home page named "Today". This page will be the home screen
-                and it will display the schedule of the day.
-            </p>
-        </div>
+  <body>
+    <h2 class="title">Add New Event</h2>
 
-        <div id="CalendarPage" class="page">
-            <h2>Calender</h2>
-            <p>This is the second page named "Calendar".</p>
-        </div>
+    <main id="AddPage">
+      <div class="background">
+        <form method="POST" action="">
+          <div class="input-group">
+            <p>Event Title</p>
+            <input
+              type="text"
+              name="event_title"
+              placeholder="e.g., Submit assignment"
+            />
+          </div>
 
-        <div id="AddPage">
-            <h2 class="title">Add New Event</h2>
-            
-            <?php if (!empty($message)) echo $message; ?>
+          <div class="input-group">
+            <label for="dropdown">Event Type</label>
+            <select name="dropdown" id="dropdown">
+              <option value="" hidden selected disabled>
+                -- Select an option --
+              </option>
+              <option value="Event">Event</option>
+              <option value="Task">Task</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
 
-            <div class="background">
-                <form method="POST" action="">
-                    <p>Event Title</p>
-                    <input type="text" name="event_title" placeholder="e.g., Submit assignment" />
-                    <label for="dropdown">Event Type</label><br>
-                    <div class="row">
-                        <select name="dropdown" id="dropdown" class="dropdowns wide">
-                            <option value="" hidden selected disabled>-- Select an option --</option>
-                            <option value="Event">Event</option>
-                            <option value="Task">Task</option>
-                        </select>
-                        <div class="narrow"></div>
-                    </div>
-                    <div class="narrow"></div>
-                    <div class="row">
-                        <p class="wide">Date & Start Time</p>
-                        <p class="narrow">Duration (mins)</p>
-                    </div>
-                    <div class="row">
-                        <input class="wide" type="datetime-local" name="date_time"/>
-                        <input class="narrow" placeholder="Input Time" name="duration" type="number"/>
-                    </div>
-                    <p>Description / Location</p>
-                    <textarea name="description" placeholder="Add details" rows="5"></textarea>
-                    <p>Tags</p>
-                    <input type="text" name="tags" placeholder="e.g., maths, urgent, exam" />
-                    <button type="submit">Create Event</button>
-                </form>
+          <div class="row">
+            <div class="input-group wide">
+              <p>Date & Start Time</p>
+              <input type="datetime-local" name="date_time" />
             </div>
-        </div>
+            <div class="input-group narrow">
+              <p>Duration (mins)</p>
+              <input placeholder="Input Time" name="duration" type="number" />
+            </div>
+          </div>
+
+          <div class="input-group">
+            <p>Description / Location</p>
+            <textarea
+              name="description"
+              placeholder="Add details"
+              rows="4"
+            ></textarea>
+          </div>
+
+          <div class="input-group">
+            <p>Tags</p>
+            <input
+              type="text"
+              name="tags"
+              placeholder="e.g., maths, urgent, exam"
+            />
+          </div>
+
+          <button type="submit">Create Event</button>
+        </form>
+      </div>
     </main>
 
     <footer class="toolbar">
-        <button>Today</button>
-        <button>+</button>
-        <button>Calendar</button>
+      <button>To-Do</button>
+      <button class="add-btn">+</button>
+      <button>Calendar</button>
     </footer>
-</body>
+  </body>
 </html>
