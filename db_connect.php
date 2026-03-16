@@ -2,10 +2,10 @@
 /* This file establishes a secure connection to the MySQL database using the PDO (PHP Data Objects) interface. 
 It is included in every page that requires database access.
  */ 
-$servername = "sql301.infinityfree.com"; 
-$username = "if0_41113769";              
-$password = "TutorialGroupX5";        
-$dbname = "if0_41113769_smart_timetabler_db";    
+$servername = "sql210.infinityfree.com"; 
+$username = "if0_41405521";              
+$password = "AbCXr7WpKPxVs";        
+$dbname = "if0_41405521_smart_timetabler_db";    
 
 try {
     $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);

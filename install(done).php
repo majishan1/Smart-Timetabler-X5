@@ -2,10 +2,8 @@
 /**
  * Database Setup - Currently for min working demo
  * * Creates only the essential tables required for the 
- * min working demo (Timetable, Tasks, Deadlines).
+ * min working demo (Timetable, Tasks, Deadlines, Tags).
  */
-
-
 
 require 'db_connect.php';
 
@@ -31,13 +29,11 @@ try {
         staff VARCHAR(200),
         location VARCHAR(200),
         FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
-  
     )";
     $conn->exec($sql_events);
     echo "Table 'Events' created.<br>";
 
     // ToDo Table
-
     $sql_todo = "CREATE TABLE IF NOT EXISTS ToDo (
         taskID INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         UserID INT(6) UNSIGNED,
@@ -46,10 +42,32 @@ try {
         deadline DATETIME,      
         FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
     )";
-
     $conn->exec($sql_todo);
     echo "Table 'ToDo' created .<br>";
 
+    // Tags Table 
+    $sql_tags = "CREATE TABLE IF NOT EXISTS Tags (
+        TagID INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        UserID INT(6) UNSIGNED,
+        tag_name VARCHAR(50) NOT NULL,
+        color VARCHAR(7) DEFAULT '#808080',
+        FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
+    )";
+    $conn->exec($sql_tags);
+    echo "Table 'Tags' created.<br>";
+
+    // ToDo_Tags Junction Table 
+    $sql_todo_tags = "CREATE TABLE IF NOT EXISTS ToDo_Tags (
+        taskID INT(6) UNSIGNED NOT NULL,
+        TagID INT(6) UNSIGNED NOT NULL,
+        PRIMARY KEY (taskID, TagID),
+        FOREIGN KEY (taskID) REFERENCES ToDo(taskID) ON DELETE CASCADE,
+        FOREIGN KEY (TagID) REFERENCES Tags(TagID) ON DELETE CASCADE
+    )";
+    $conn->exec($sql_todo_tags);
+    echo "Table 'ToDo_Tags' created.<br>";
+
+    // Timetable Links Table
     $sql_Timetable_Links="CREATE TABLE IF NOT EXISTS Timetable_Links (
         UserID INT(6) UNSIGNED PRIMARY KEY,
         ical_url VARCHAR(700) NOT NULL,
@@ -57,6 +75,8 @@ try {
         FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
     )";
     $conn->exec($sql_Timetable_Links);
+    echo "Table 'Timetable_Links' created.<br>";
+
     echo "<hr><strong>Database Ready</strong>";
 
 } catch(PDOException $e) {

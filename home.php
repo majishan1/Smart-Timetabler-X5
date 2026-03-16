@@ -29,7 +29,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $event_type = isset($_POST['dropdown']) ? $_POST['dropdown'] : 'Task';  
         $duration = !empty($_POST['duration']) ? (int)$_POST['duration'] : 0;
         $description = isset($_POST['description']) ? $_POST['description'] : '';
-        $tags = isset($_POST['tags']) ? $_POST['tags'] : '';
+        $raw_tags = isset($_POST['tags']) ? $_POST['tags'] : '';
         
         $date_time = !empty($_POST['date_time']) ? str_replace('T', ' ', $_POST['date_time']) . ':00' : NULL;
 
@@ -43,34 +43,84 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 ':deadline' => $date_time
             ]);
 
-            // If it found a match
             if ($check_stmt->rowCount() > 0) {
                 $message = "<p style='color:orange; text-align:center; font-weight:bold;'>You already added this task!</p>";
             } else {
-                // It is a new event
-                $sql = "INSERT INTO ToDo (UserID, title, type, description, deadline, tags, is_complete, duration) 
-                        VALUES (:UserID, :title, :type, :description, :deadline, :tags, :is_complete, :duration)";
-                        
-                $stmt = $conn->prepare($sql);
                 
+                $conn->beginTransaction();
+
+                $sql = "INSERT INTO ToDo (UserID, title, type, description, deadline, is_complete, duration) 
+                        VALUES (:UserID, :title, :type, :description, :deadline, :is_complete, :duration)";
+                $stmt = $conn->prepare($sql);
                 $stmt->execute([
                     ':UserID' => $current_user_id,
                     ':title' => $event_title,
                     ':type' => $event_type,
                     ':description' => $description,
                     ':deadline' => $date_time,
-                    ':tags' => $tags,
                     ':is_complete' => 0,
                     ':duration' => $duration
                 ]);
                 
+                // get the ID of the task just created
+                $new_task_id = $conn->lastInsertId();
+
+                if (!empty(trim($raw_tags))) {
+                    
+                    // Split by comma in case they typed 
+                    $tags_array = explode(',', $raw_tags);
+                    
+                    // Prepare our tag SQL statements 
+                    $check_tag_stmt = $conn->prepare("SELECT TagID FROM Tags WHERE UserID = :uid AND tag_name = :tag_name");
+                    $insert_tag_stmt = $conn->prepare("INSERT INTO Tags (UserID, tag_name) VALUES (:uid, :tag_name)");
+                    // Using INSERT IGNORE so if they type duplicate tags it wont crash
+                    $link_tag_stmt = $conn->prepare("INSERT IGNORE INTO ToDo_Tags (taskID, TagID) VALUES (:taskID, :TagID)");
+
+                    foreach ($tags_array as $tag) {
+                        // remove extra spaces and forcing uppercase
+                        $clean_tag = strtoupper(trim($tag));
+                        
+                        if (empty($clean_tag)) continue; // Skip empty commas
+
+                        // If the user already has the tag
+                        $check_tag_stmt->execute([
+                            ':uid' => $current_user_id,
+                            ':tag_name' => $clean_tag
+                        ]);
+
+                        if ($check_tag_stmt->rowCount() > 0) {
+                            // Get the tag id if it already ecists 
+                            $row = $check_tag_stmt->fetch(PDO::FETCH_ASSOC);
+                            $tag_id = $row['TagID'];
+                        } else {
+                            // If not insertt a new tag
+                            $insert_tag_stmt->execute([
+                                ':uid' => $current_user_id,
+                                ':tag_name' => $clean_tag
+                            ]);
+                            $tag_id = $conn->lastInsertId();
+                        }
+
+                        // Link the Task and the Tag together in the Junction Table
+                        $link_tag_stmt->execute([
+                            ':taskID' => $new_task_id,
+                            ':TagID' => $tag_id
+                        ]);
+                    }
+                }
+
+                $conn->commit();
+                
                 $message = "<div style='background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; text-align: center; margin: 15px 0; border: 1px solid #c3e6cb;'>
-                            <strong>Event successfully added!</strong>
+                            <strong>Event & Tags successfully added!</strong>
                             </div>";
             }
 
         } catch (PDOException $e) {
-            // Error checkign again for debugging
+            // If there was an error roll back the database so we don't get partial data
+            if ($conn->inTransaction()) {
+                $conn->rollBack();
+            }
             $message = "<div style='background: #ffebee; color: #c62828; padding: 15px; border: 2px solid #ef5350; text-align: center; margin: 15px 0;'>
                         <strong>Database Error:</strong><br>" . $e->getMessage() . "
                         </div>";
@@ -133,7 +183,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <p>Description / Location</p>
                     <textarea name="description" placeholder="Add details" rows="5"></textarea>
                     <p>Tags</p>
-                    <input type="text" name="tags" placeholder="A selection bar?" />
+                    <input type="text" name="tags" placeholder="e.g., maths, urgent, exam" />
                     <button type="submit">Create Event</button>
                 </form>
             </div>

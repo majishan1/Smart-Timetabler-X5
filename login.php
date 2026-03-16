@@ -4,7 +4,7 @@
  */
 
 // 1. Define Constants (Required for Authenticator)
-define("DEVELOPER_URL", "https://smarttimetabler.gt.tc/login.php");
+define("DEVELOPER_URL", "https://smarttimetabler.infinityfreeapp.com/login.php");
 define("AUTHENTICATION_SERVICE_URL", "http://studentnet.cs.manchester.ac.uk/authenticate/");
 define("AUTHENTICATION_LOGOUT_URL", "http://studentnet.cs.manchester.ac.uk/systemlogout.php");
 

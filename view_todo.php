@@ -1,6 +1,11 @@
 <?php
 session_start();
 
+// Turn on error reporting
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
@@ -8,17 +13,50 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 require 'db_connect.php';
+$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
 $current_user_id = $_SESSION['user_id'];
 $todos = [];
 $error_message = "";
 
 try {
-    // Fetch all incomplete tasks for this user, sorted by deadline (closest first)
-    $sql = "SELECT * FROM ToDo WHERE UserID = :uid AND is_complete = 0 ORDER BY deadline ASC";
+    //Using a left join, so that tasks with no tags are still retrieved 
+    $sql = "SELECT ToDo.*, Tags.tag_name, Tags.color 
+            FROM ToDo 
+            LEFT JOIN ToDo_Tags ON ToDo.taskID = ToDo_Tags.taskID
+            LEFT JOIN Tags ON ToDo_Tags.TagID = Tags.TagID
+            WHERE ToDo.UserID = :uid AND ToDo.is_complete = 0 
+            ORDER BY ToDo.deadline ASC";
+            
     $stmt = $conn->prepare($sql);
     $stmt->execute([':uid' => $current_user_id]);
-    
-    $todos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $raw_results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+
+    foreach ($raw_results as $row) {
+        $id = $row['taskID'];
+        
+
+        if (!isset($todos[$id])) {
+            $todos[$id] = [
+                'taskID' => $row['taskID'],
+                'title' => $row['title'], 
+                'type' => $row['type'],
+                'description' => $row['description'],
+                'deadline' => $row['deadline'],
+                'duration' => $row['duration'],
+                'tags' => [] 
+            ];
+        }
+        
+
+        if (!empty($row['tag_name'])) {
+            $todos[$id]['tags'][] = [
+                'name' => $row['tag_name'],
+                'color' => $row['color']
+            ];
+        }
+    }
 
 } catch (PDOException $e) {
     $error_message = "Database Error: " . $e->getMessage();
@@ -54,8 +92,17 @@ try {
             text-decoration: none;
             border-radius: 5px;
             font-weight: bold;
+            margin-left: 10px;
         }
-        .btn-add:hover { background: #218838; }
+        .btn-manage {
+            background: #17a2b8;
+            color: white;
+            padding: 10px 15px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .header-buttons { display: flex; }
         
         .date-header {
             background: #343a40;
@@ -74,15 +121,14 @@ try {
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             padding: 15px 20px;
             margin-bottom: 15px;
-            border-left: 5px solid #6c757d; /* Default Grey */
+            border-left: 5px solid #6c757d; 
             display: flex;
             align-items: flex-start;
             gap: 15px;
         }
-        .todo-card.task { border-left-color: #007bff; } /* Blue for Tasks */
-        .todo-card.event { border-left-color: #9c27b0; } /* Purple for Events */
+        .todo-card.task { border-left-color: #007bff; }
+        .todo-card.event { border-left-color: #9c27b0; }
         
-        /* Custom Checkbox */
         .checkbox-container input {
             width: 22px;
             height: 22px;
@@ -91,36 +137,24 @@ try {
             margin-top: 5px;
         }
 
-        .todo-content {
-            flex-grow: 1;
-        }
-
-        .todo-title {
-            margin: 0 0 5px 0;
-            font-size: 1.25em;
-            color: #111;
-        }
+        .todo-content { flex-grow: 1; }
+        .todo-title { margin: 0 0 5px 0; font-size: 1.25em; color: #111; }
         
         .badge {
             display: inline-block;
-            padding: 3px 8px;
+            padding: 3px 10px;
             border-radius: 12px;
             font-size: 0.8em;
             font-weight: bold;
             color: white;
-            margin-right: 10px;
+            margin-right: 8px;
             margin-bottom: 8px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3); 
         }
         .badge.task { background: #007bff; }
         .badge.event { background: #9c27b0; }
-        .badge.tag { background: #e0e0e0; color: #333; border: 1px solid #ccc; }
-
-        .todo-details {
-            font-size: 0.9em;
-            color: #555;
-            margin-bottom: 5px;
-        }
         
+        .todo-details { font-size: 0.9em; color: #555; margin-bottom: 5px; }
         .todo-desc {
             font-size: 0.9em;
             color: #666;
@@ -130,7 +164,6 @@ try {
             margin-top: 8px;
             border: 1px solid #eee;
         }
-
         .empty-state {
             text-align: center;
             padding: 50px;
@@ -145,7 +178,10 @@ try {
 
     <div class="header">
         <h1>My To-Do List</h1>
-        <a href="add_todo.php" class="btn-add">+ Add Task</a> 
+        <div class="header-buttons">
+            <a href="manage_tags.php" class="btn-manage">🎨 Colors</a>
+            <a href="add_event.php" class="btn-add">+ Add</a>
+        </div>
     </div>
 
     <?php if ($error_message): ?>
@@ -162,37 +198,26 @@ try {
         $current_date = "";
 
         foreach ($todos as $todo) {
-            // Format the deadline Date and Time
+            
             if (!empty($todo['deadline'])) {
                 $timestamp = strtotime($todo['deadline']);
-                $date_string = date('l, j F Y', $timestamp); // e.g., "Wednesday, 11 March 2026"
-                $time_string = date('H:i', $timestamp);      // e.g., "14:30"
+                $date_string = date('l, j F Y', $timestamp); 
+                $time_string = date('H:i', $timestamp);     
             } else {
                 $date_string = "No Deadline";
                 $time_string = "Anytime";
             }
 
-            // Print a Date Header if we are on a new day
             if ($date_string !== $current_date) {
                 echo "<div class='date-header'>" . $date_string . "</div>";
                 $current_date = $date_string;
             }
 
-            // Figure out styling based on the type (Task vs Event)
             $type_lower = strtolower($todo['type']);
             $card_class = ($type_lower == 'event') ? 'event' : 'task';
-            
-            // Format tags (splits comma-separated tags into an array)
-            $tags_html = "";
-            if (!empty($todo['tags'])) {
-                $tag_array = explode(',', $todo['tags']);
-                foreach ($tag_array as $tag) {
-                    $tags_html .= "<span class='badge tag'>🏷️ " . htmlspecialchars(trim($tag)) . "</span>";
-                }
-            }
             ?>
             
-            <div class="event-card todo-card <?php echo $card_class; ?>">
+            <div class="todo-card <?php echo $card_class; ?>">
                 
                 <div class="checkbox-container">
                     <input type="checkbox" title="Mark as complete">
@@ -202,7 +227,17 @@ try {
                     <h3 class="todo-title"><?php echo htmlspecialchars($todo['title']); ?></h3>
                     
                     <span class="badge <?php echo $card_class; ?>"><?php echo htmlspecialchars($todo['type']); ?></span>
-                    <?php echo $tags_html; ?>
+                    
+                    <?php 
+                    if (!empty($todo['tags'])) {
+                        foreach ($todo['tags'] as $tag) {
+                            $tag_name = htmlspecialchars($tag['name']);
+                            $tag_color = htmlspecialchars($tag['color']);
+                           
+                            echo "<span class='badge' style='background-color: {$tag_color};'>🏷️ {$tag_name}</span>";
+                        }
+                    }
+                    ?>
                     
                     <div class="todo-details">
                         <strong>⏰ Due:</strong> <?php echo $time_string; ?> 
