@@ -200,9 +200,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </main>
 
     <footer class="toolbar">
-      <button>To-Do</button>
-      <button class="add-btn">+</button>
-      <button>Calendar</button>
+      <button onclick="window.location.href='view_todo.php'">To-Do</button>
+      <button class="add-btn" onclick="window.location.href='home.php'">+</button>
+      <button onclick="window.location.href='view_timetable.php'">Calendar</button>
+      <button onclick="window.location.href='settings.php'">Settings</button>
     </footer>
   </body>
 </html>
