@@ -10,7 +10,7 @@ function jump_today() {
 
 function new_week(offset_change) {
     week_offset += offset_change;
-    let week_events = get_week_events();
+    get_week_events();
     remove_events();
     update_events(week_events);
     remove_date_bar();
@@ -35,7 +35,7 @@ function get_week_events() {
             selected_events.push(event);
         }
     }
-    return selected_events;
+    week_events = selected_events;
 }
 
 function get_start_of_week() {
@@ -71,16 +71,38 @@ function update_events(events) {
 
         let day_col = document.getElementById(String(event_day));
 
+        // For the standard (unselected) event blocks
         let new_event_div = document.createElement('div');
         new_event_div.className = "event_block" + " " + event.type.toUpperCase();
+        new_event_div.id = event.EventID;
         new_event_div.textContent = event.module;
         new_event_div.style.top = mins_into_day + "px"
         new_event_div.style.height = event_dur + "px"
-
-        
+        new_event_div.addEventListener('click', function() {show_extended(new_event_div.id)});
 
         day_col.appendChild(new_event_div);
 
+        //For extended (selected) event blocks
+        let extended_event_div = document.createElement('div');
+        let week_view_tab = document.getElementById('WeekID');
+
+        extended_event_div.className = event.type.toUpperCase() + " extended_block";
+        extended_event_div.id = "e" + event.EventID;
+        extended_event_div.style.visibility = "hidden";
+
+        extended_event_div.innerHTML = `
+        <div class="ext_header">
+            <h3>${event.module}</h3>
+            <button type="button" class="close_button" onclick="hide_extended('${event.EventID}')">&times;</button>
+        </div>
+        <div class="ext_body">
+            <p><strong>Type: </strong>${event.type}</p>
+            <p><strong>Time: </strong>${event.start_time}</p>
+            <p><strong>Location: </strong>${event.location || 'TBC'}</p>
+            <p><strong>Staff: </strong>${event.staff || 'TBC'}</p>
+        </div>`
+
+        week_view_tab.appendChild(extended_event_div);
     }
 }
 
@@ -154,6 +176,20 @@ function calc_and_show_cur_time() {
     time_line.style.width = 100/52 * (3 + 7 * today) + "%";
 
     week_box.appendChild(time_line);
+}
+
+function show_extended(id) {
+    let extended_boxes = document.getElementsByClassName('extended_block');
+    for (var i = 0; i < extended_boxes.length; i++) {
+        extended_boxes[i].style.visibility = "hidden";
+    }
+    let extended_box  = document.getElementById('e' + id);
+    extended_box.style.visibility = "visible";
+}
+
+function hide_extended(id) {
+    let extended_box = document.getElementById('e' + id);
+    extended_box.style.visibility = "hidden";
 }
 
 // Shows the days of the week and dates when program loaded

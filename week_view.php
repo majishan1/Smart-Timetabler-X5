@@ -39,6 +39,25 @@ catch (PDOException $e){
             font-family: Arial,sans-serif
         }
 
+        html {
+            scrollbar-width: thin;
+            scrollbar-color: #264653 #f0efeb;
+        }
+
+        html::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        html::-webkit-scrollbar-track {
+            background: #f0efeb;
+        }
+
+        html::-webkit-scrollbar-thumb {
+            background-color: #264653;
+            border-radius: 10px;
+            border: 3px solid #f0efeb;
+        }
+
         body {
             padding: 20px;
             background: #fAf9f6;
@@ -57,7 +76,7 @@ catch (PDOException $e){
         }
 
         .calendarContainer {
-            height: 85vh;
+            height: 80vh;
             overflow-y: auto;
             overflow-x: hidden;
 
@@ -81,11 +100,6 @@ catch (PDOException $e){
             background-color: #264653;
             border-radius: 10px;
             border: 3px solid #f0efeb;
-            transition: background-color 0.2s;
-        }
-
-        .calendarContainer::-webkit-scrollbar-thumb:hover {
-            background-color: #2a9d8f;
         }
 
         .week {
@@ -159,18 +173,73 @@ catch (PDOException $e){
             color: #264653;
             font-size: 0.8em;
             overflow: hidden;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .event_block:hover {
             box-shadow: 0 -1px 3px #00000080;
         }
 
-        .event_block.LECTURE {background-color: #e8f5e9; border-color: #c2dfe3; border-left-color: #2a9d8f;}
-        .event_block.ADVISEMENT {background-color: #f4f1de; border-color: #eae6df; border-left-color: #e07a5f;}
-        .event_block.LABORATORY {background-color: #fde2e4; border-color: #fad2e1; border-left-color: #d5bdaf;}
-        .event_block.DROP-IN {background-color: #e0fbfc; border-color: #c2dfe3; border-left-color: #98c1d9;}
-        .event_block.EXAMPLES {background-color: #ffd6a5; border-color: #ffc685; border-left-color: #f4a261;}
-        .event_block.WORKSHOP {background-color: #fff1e6; border-color: #fde2e4; border-left-color: #e76f51;}
+        .event_block.LECTURE, .extended_block.LECTURE {background-color: #e8f5e9; border-color: #c2dfe3; border-left-color: #2a9d8f;}
+        .event_block.ADVISEMENT, .extended_block.ADVISEMENT {background-color: #f4f1de; border-color: #eae6df; border-left-color: #e07a5f;}
+        .event_block.LABORATORY, .extended_block.LABORATORY {background-color: #fde2e4; border-color: #fad2e1; border-left-color: #d5bdaf;}
+        .event_block.DROP-IN, .extended_block.DROP-IN {background-color: #e0fbfc; border-color: #c2dfe3; border-left-color: #98c1d9;}
+        .event_block.EXAMPLES, .extended_block.EXAMPLES {background-color: #ffd6a5; border-color: #ffc685; border-left-color: #f4a261;}
+        .event_block.WORKSHOP, .extended_block.WORKSHOP {background-color: #fff1e6; border-color: #fde2e4; border-left-color: #e76f51;}
+
+        .extended_block {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30vw;
+
+            border: 1px solid #a9a9a9;
+            border-left-width: 8px;
+            border-radius: 8px;
+            box-shadow: 0 8px 30px #00000080;
+            padding-bottom: 10px;
+            z-index: 2000;
+        }
+
+        .ext_header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #00000080;
+            padding: 10px 0px 10px 0px;
+            margin-bottom: 15px;
+        }
+
+        .ext_header h3 {
+            font-size: 1.2em;
+            margin: 0;
+            padding-right: 15px;
+        }
+
+        .close_button {
+            background: none;
+            border: none;
+            font-size: 1.8em;
+            line-height: 0.8;
+            padding-right: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        .close_button:hover {
+            transform: scale(1.2);
+        }
+
+        .ext_body p {
+            text-align: left;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
 
         .cur_time_line {
             position: absolute;
@@ -230,6 +299,7 @@ catch (PDOException $e){
 
     <script>
         let week_offset = 0;
+        let week_events = null;
         const events = <?php echo json_encode($events) ?>;
     </script>
     <script src="week_view.js" defer></script>
