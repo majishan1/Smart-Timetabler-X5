@@ -2,7 +2,7 @@
 /**
  * Database Setup - Currently for min working demo
  * * Creates only the essential tables required for the 
- * min working demo (Timetable, Tasks, Deadlines, Tags).
+ * min working demo (Timetable, Tasks, Deadlines, Tags, Settings).
  */
 
 require 'db_connect.php';
@@ -16,6 +16,19 @@ try {
     $conn->exec($sql_users);
     echo "Table 'Users' Created succesffully .<br>";
 
+    // User Settings Table 
+    $sql_settings = "CREATE TABLE IF NOT EXISTS User_Settings (
+        UserID INT(10) UNSIGNED PRIMARY KEY,
+        postcode VARCHAR(20),
+        preferred_transport VARCHAR(50) DEFAULT 'public_transport',
+        email VARCHAR(255) DEFAULT NULL,
+        start_hour INT DEFAULT 8,
+        end_hour INT DEFAULT 18,
+        display_name VARCHAR(50),
+        FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
+    )";
+    $conn->exec($sql_settings);
+    echo "Table 'User_Settings' created.<br>";
 
     // Events Table 
     $sql_events = "CREATE TABLE IF NOT EXISTS Events (
