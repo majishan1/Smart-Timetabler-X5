@@ -53,13 +53,18 @@ try {
 
     // 4. Ping the Python API if we have an event with a location
     if ($next_event && !empty($next_event['location'])) {
+        $raw_location = $next_event['location'];
+        $clean_location = $raw_location;
         
+        if (strpos($raw_location, '_') !== false) {
+            $building_name = explode('_', $raw_location)[0]; // Grabs the first part
+            $clean_location = $building_name . " Building, University of "; 
+        }
         $api_payload = json_encode([
             "home_postcode" => $home_postcode,
-            "event_location" => $next_event['location'],
+            "event_location" => $clean_location,
             "transport_mode" => $active_mode
         ]);
-
         // Initialize cURL to talk to your Render backend
         $ch = curl_init('https://timetable-api-ebyk.onrender.com/get_commute');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -218,7 +223,7 @@ try {
 <body>
 
 <div class="card">
-    <a href="index.php" class="nav-back">← Back to Dashboard</a>
+    <a href="home.php" class="nav-back">← Back to Dashboard</a>
     <h2>Next Event Commute</h2>
 
     <?php if ($error_message): ?>

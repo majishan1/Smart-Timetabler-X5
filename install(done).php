@@ -21,6 +21,10 @@ try {
         UserID INT(10) UNSIGNED PRIMARY KEY,
         postcode VARCHAR(20),
         preferred_transport VARCHAR(50) DEFAULT 'public_transport',
+        email VARCHAR(255) DEFAULT NULL,
+        start_hour INT DEFAULT 8,
+        end_hour INT DEFAULT 18,
+        display_name VARCHAR(50),
         FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
     )";
     $conn->exec($sql_settings);
@@ -87,34 +91,7 @@ try {
     echo "Table 'Timetable_Links' created.<br>";
 
     echo "<hr><strong>Database Ready</strong>";
-    // User Settings Table
-    $sql_user_settings = "CREATE TABLE IF NOT EXISTS UserSettings (
-        UserID VARCHAR(100) NOT NULL PRIMARY KEY,
-        full_name VARCHAR(255) DEFAULT NULL,
-        display_name VARCHAR(255) DEFAULT NULL,
-        email VARCHAR(255) DEFAULT NULL,
-        bio TEXT DEFAULT NULL,
-        timetable_url VARCHAR(700) DEFAULT NULL,
-        default_view VARCHAR(20) DEFAULT 'week',
-        first_day_of_week VARCHAR(10) DEFAULT 'monday',
-        start_hour INT DEFAULT 8,
-        end_hour INT DEFAULT 18,
-        show_weekends BOOLEAN DEFAULT 1,
-        auto_refresh_timetable BOOLEAN DEFAULT 0,
-        default_event_duration INT DEFAULT 60,
-        default_event_colour VARCHAR(20) DEFAULT '#007bff',
-        show_completed_todos BOOLEAN DEFAULT 1,
-        default_reminder_minutes INT DEFAULT 15,
-        confirm_before_delete BOOLEAN DEFAULT 1,
-        compact_view BOOLEAN DEFAULT 0,
-        show_dashboard_tips BOOLEAN DEFAULT 1,
-        time_format VARCHAR(10) DEFAULT '24h',
-        date_format VARCHAR(20) DEFAULT 'DD/MM/YYYY',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    )";
-    $conn->exec($sql_user_settings);
-    echo "Table 'UserSettings' created.<br>";
+
 } catch(PDOException $e) {
     echo "Error: " . $e->getMessage();
 }
