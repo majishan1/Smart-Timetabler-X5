@@ -6,7 +6,7 @@ error_reporting(E_ALL);
 
 session_start();
 require 'db_connect.php';
-/*
+
 // force the database to show errors for debugging
 $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
@@ -18,7 +18,7 @@ if (!isset($_SESSION['user_id'])) {
 
 $current_user_id = $_SESSION['user_id'];
 $message = "";
-*/
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $event_title = isset($_POST['event_title']) ? trim($_POST['event_title']) : '';

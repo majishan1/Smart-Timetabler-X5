@@ -108,5 +108,4 @@ function isActive($pageName, $current_file) {
 .add-btn:active {
     transform: scale(0.95);
 }
-
 </style>
