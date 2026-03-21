@@ -30,6 +30,7 @@ function get_week_events() {
 
     for (var i = 0; i < events.length; i++) {
         let event = events[i];
+        if (!event.start_time) continue;
         let ev_date = new Date(event.start_time.replace(' ', 'T'));
         if (ev_date >= week_start && ev_date <= week_end) {
             selected_events.push(event);
@@ -50,10 +51,7 @@ function get_start_of_week() {
 }
 
 function remove_events() {
-    let event_blocks = document.getElementsByClassName('event_block');
-    while (event_blocks.length > 0) {
-        event_blocks[0].parentNode.removeChild(event_blocks[0]);
-    }
+    document.querySelectorAll('.event_block, .extended_block').forEach(event => event.remove());
 }
 
 function update_events(events) {
@@ -84,7 +82,12 @@ function update_events(events) {
 
         //For extended (selected) event blocks
         let extended_event_div = document.createElement('div');
-        let week_view_tab = document.getElementById('WeekID');
+        let end_time = new Date((event_time.getTime() + event_dur * 60000));
+
+        let min_hour = {hour: '2-digit', minute: '2-digit'};
+        let start_t = event_time.toLocaleTimeString([], min_hour);
+        let end_t = end_time.toLocaleTimeString([], min_hour);
+
 
         extended_event_div.className = event.type.toUpperCase() + " extended_block";
         extended_event_div.id = "e" + event.EventID;
@@ -92,17 +95,92 @@ function update_events(events) {
 
         extended_event_div.innerHTML = `
         <div class="ext_header">
-            <h3>${event.module}</h3>
-            <button type="button" class="close_button" onclick="hide_extended('${event.EventID}')">&times;</button>
+            <h3>${escapeHTML(event.module)}</h3>
+            <button type="button" class="close_button" onclick="hide_extended('${escapeHTML(event.EventID)}')">&times;</button>
         </div>
         <div class="ext_body">
-            <p><strong>Type: </strong>${event.type}</p>
-            <p><strong>Time: </strong>${event.start_time}</p>
-            <p><strong>Location: </strong>${event.location || 'TBC'}</p>
-            <p><strong>Staff: </strong>${event.staff || 'TBC'}</p>
+            <p><strong>Type: </strong>${escapeHTML(event.type)}</p>
+            <p><strong>Time: </strong>${escapeHTML(start_t)} - ${escapeHTML(end_t)}</p>
+            <p><strong>Location: </strong>${escapeHTML(event.location || 'TBC')}</p>
+            <p><strong>Staff: </strong>${escapeHTML(event.staff || 'TBC')}</p>
         </div>`
 
-        week_view_tab.appendChild(extended_event_div);
+        document.body.appendChild(extended_event_div);
+    }
+    handle_collisions(check_collisions(events));
+}
+
+function check_collisions (events) {
+    let colliding_clusters = [];
+    let cur_cluster = [];
+    let cur_cluster_end = 0;
+
+    events.sort((a, b) => new Date(a.start_time.replace(' ', 'T')) - new Date(b.start_time.replace(' ', 'T')));
+
+    for (var i = 0; i < events.length; i++) {
+
+        let ev_s = new Date(events[i].start_time.replace(' ', 'T')).getTime();
+        let ev_e = ev_s + events[i].duration * 60000;
+
+        // if no current collision
+        if (cur_cluster.length === 0) {
+            cur_cluster.push(events[i]);
+            cur_cluster_end = ev_e;
+        }
+        else {
+            // Is there is a collision?
+            if (ev_s < cur_cluster_end) {
+                cur_cluster.push(events[i]);
+
+                if (ev_e > cur_cluster_end) {
+                    cur_cluster_end = ev_e;
+                }
+            }
+            else {
+                colliding_clusters.push(cur_cluster);
+                cur_cluster = [];
+            }
+        }
+    }
+    if (cur_cluster.length > 0) colliding_clusters.push(cur_cluster);
+    return colliding_clusters;
+}
+
+function handle_collisions(collisions_arr) {
+    for (var i = 0; i < collisions_arr.length; i++) {
+        let no_colliding = collisions_arr[i].length;
+        let lanes = [];
+
+        for (var j = 0; j < no_colliding; j++) {
+            let event = collisions_arr[i][j];
+            let ev_start = new Date(event.start_time.replace(' ', 'T'));
+            let ev_height = new Date(ev_start.getTime() + event.duration * 60000);
+            let ev_lane = -1;
+
+            for (var k = 0; k < lanes.length; k++) {
+                if (ev_start >= lanes[k]) {
+                    ev_lane = k;
+                    break;
+                }
+            }
+            if (ev_lane === -1) {
+                ev_lane = lanes.length;
+                lanes.push(ev_height);
+            }
+            else {
+                lanes[ev_lane] = ev_height;
+            }
+            event.lane = ev_lane;
+        }
+
+        let total_lanes = lanes.length;
+        let ev_widths = 97.5 / total_lanes;
+        for (var l = 0; l < collisions_arr[i].length; l++) {
+            let ev = collisions_arr[i][l];
+            let ev_block = document.getElementById(ev.EventID);
+            ev_block.style.width = ev_widths + "%";
+            ev_block.style.left = (1.25 + (ev.lane * ev_widths)) + "%";
+        }
     }
 }
 
@@ -142,17 +220,23 @@ function find_month() {
 }
 
 function cur_time_shown() {
-    
-    if (week_offset === 0) {
-        let time_line = document.getElementById("cur_time");
-        if (time_line !== null) {
+    let time_line = document.getElementById("cur_time");
+    let marker1 = document.getElementById('marker1');
+    let marker2 = document.getElementById('marker2');
+    if (time_line !== null) {
+        if (week_offset === 0) {
             time_line.style.visibility = "visible";
+            marker1.style.visibility = "visible";
+            marker2.style.visibility = "visible";
             time_line.style.top = get_line_height()[0] + "px";
+            marker1.style.top = (get_line_height()[0]) + "px";
+            marker2.style.top = (get_line_height()[0]) + "px";
         }
-    }
-    else {
-        let time_line = document.getElementById("cur_time");
-        time_line.style.visibility = "hidden";
+        else {
+            time_line.style.visibility = "hidden";
+            marker1.style.visibility = "hidden";
+            marker2.style.visibility = "hidden";
+        }
     }
 }
 
@@ -169,12 +253,27 @@ function calc_and_show_cur_time() {
 
     let week_box = document.getElementById('WeekID');
     let time_line = document.createElement('hr');
+    let marker1 = document.createElement('div');
+    let marker2 = document.createElement('div');
 
     time_line.className = "cur_time_line";
-    time_line.id = "cur_time";
-    time_line.style.top = line_height + "px";
-    time_line.style.width = 100/52 * (3 + 7 * today) + "%";
+    marker1.className = "time_marker";
+    marker2.className = "time_marker";
 
+    time_line.id = "cur_time";
+    marker1.id = "marker1";
+    marker2.id = "marker2";
+
+    time_line.style.top = line_height + "px";
+    marker1.style.top = line_height + "px";
+    marker2.style.top = line_height + "px";
+
+    marker1.style.left = 100/52 * (3 + 7 * (today - 1)) + "%";
+    marker2.style.left = 100/52 * (3 + 7 * today) + "%";
+
+
+    week_box.appendChild(marker1);
+    week_box.appendChild(marker2);
     week_box.appendChild(time_line);
 }
 
@@ -185,11 +284,24 @@ function show_extended(id) {
     }
     let extended_box  = document.getElementById('e' + id);
     extended_box.style.visibility = "visible";
+    document.querySelector('.calendarContainer').style.filter = "blur(10px)";
 }
 
 function hide_extended(id) {
     let extended_box = document.getElementById('e' + id);
     extended_box.style.visibility = "hidden";
+    document.querySelector('.calendarContainer').style.filter = "blur(0px)";
+}
+
+function escapeHTML(text) {
+    let map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    }
+    return String(text).replace(/[&<>"']/g, function(m) { return map[m];});
 }
 
 // Shows the days of the week and dates when program loaded

@@ -6,7 +6,6 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-
 include 'db_connect.php';
 $current_uID = $_SESSION['user_id'];
 $events = [];
@@ -145,6 +144,7 @@ catch (PDOException $e){
 
         .times {
             flex: 3;
+            height: 1440px;
             background-color: #f9f8f6;
         }
 
@@ -171,6 +171,9 @@ catch (PDOException $e){
 
             padding: 4px 6px;
             color: #264653;
+            background-color: #ebcbe6;
+            border-color: #fbf3f6;
+            border-left-color: #edaec8;
             font-size: 0.8em;
             overflow: hidden;
 
@@ -197,6 +200,10 @@ catch (PDOException $e){
             transform: translate(-50%, -50%);
             width: 30vw;
 
+            background-color: #ebcbe6;
+            border-color: #fbf3f6;
+            border-left-color: #edaec8;
+
             border: 1px solid #a9a9a9;
             border-left-width: 8px;
             border-radius: 8px;
@@ -215,7 +222,7 @@ catch (PDOException $e){
         }
 
         .ext_header h3 {
-            font-size: 1.2em;
+            font-size: 2em;
             margin: 0;
             padding-right: 15px;
         }
@@ -238,15 +245,27 @@ catch (PDOException $e){
         .ext_body p {
             text-align: left;
             margin-bottom: 8px;
-            font-size: 1.1em;
+            font-size: 1.3em;
         }
 
         .cur_time_line {
             position: absolute;
-            width: 0%;
+            width: 100%;
+            transform: translateY(-50%);
             border: 1px dashed #e76f51;
             z-index: 5;
         }
+
+        .time_marker {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            transform: translate(-50%, -50%);
+            background-color: #e76f51;
+            border-radius: 50%;
+            z-index: 5;
+        }
+
 
         .top_info {
             display: flex;
@@ -310,7 +329,7 @@ catch (PDOException $e){
     <div class="top_info">
         <h2 id="month"></h2>
         <div class="change_button_container">
-            <button type="button" class="week_change" id="prev_week">Previous Week</button>
+            <button type="button" class="week_change" id="prev_week">Prev Week</button>
             <button type="button" class="week_change" id="today">Today</button>
             <button type="button" class="week_change" id="next_week">Next Week</button>
         </div>
