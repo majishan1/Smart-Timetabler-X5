@@ -1,10 +1,10 @@
 <?php
-// Turn on error reporting for debugging
+
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-// Force UK Timezone so PHP knows exactly what time it is
+// Force UK Timezone
 date_default_timezone_set('Europe/London');
 $current_php_time = date('Y-m-d H:i:s'); 
 $current_date_only = date('Y-m-d');
@@ -20,7 +20,7 @@ if (!isset($_SESSION['user_id'])) {
 
 $current_user_id = (string) $_SESSION['user_id'];
 
-// --- 1. FETCH USER SETTINGS ---
+
 $stmt = $conn->prepare("SELECT display_name, postcode, preferred_transport FROM User_Settings WHERE UserID = :uid LIMIT 1");
 $stmt->execute([':uid' => $current_user_id]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -38,7 +38,7 @@ $transport_emojis = [
 ];
 $transport_label = $transport_emojis[$transport_mode] ?? 'Commute';
 
-// --- 2. FETCH WEATHER (Open-Meteo API for Manchester) ---
+// fetch weather using open api
 $weather_temp = "--";
 $weather_emoji = "☁️";
 $weather_desc = "Unknown";
@@ -63,7 +63,7 @@ try {
     }
 } catch (Exception $e) {}
 
-// --- 3. FETCH NEXT EVENT & COMMUTE ---
+// Fetch next event 
 $commute_text = "No upcoming events scheduled today.";
 $leave_time_text = "";
 
@@ -127,11 +127,11 @@ try {
     $commute_text = "<span style='color:red;'>SQL Error: " . $e->getMessage() . "</span>";
 }
 
-// --- 4. FETCH UPCOMING DEADLINES FROM CANVAS ---
+
 $deadlines = [];
 $deadline_error = "";
 try {
-    // We are now explicitly querying the Canvas_Assignments table and asking for the 'title'
+    
     $canvas_stmt = $conn->prepare("SELECT title, due_date FROM Canvas_Assignments WHERE UserID = :uid AND status = 'pending' AND due_date >= :current_date ORDER BY due_date ASC LIMIT 4");
     $canvas_stmt->execute([':uid' => $current_user_id, ':current_date' => $current_date_only]);
     $deadlines = $canvas_stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -139,7 +139,7 @@ try {
     $deadline_error = $e->getMessage();
 }
 
-// Generate greeting based on UK time
+// Generate greeting based on time
 $hour = date('H');
 if ($hour < 12) { $greeting = "Good Morning"; }
 elseif ($hour < 17) { $greeting = "Good Afternoon"; }
