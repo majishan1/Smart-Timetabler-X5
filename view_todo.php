@@ -76,6 +76,7 @@ try {
             padding: 20px;
             max-width: 800px;
             margin: 0 auto;
+            padding-bottom: 80px;
         }
         .header {
             display: flex;
@@ -180,7 +181,7 @@ try {
         <h1>My To-Do List</h1>
         <div class="header-buttons">
             <a href="manage_tags.php" class="btn-manage">🎨 Colors</a>
-            <a href="add_event.php" class="btn-add">+ Add</a>
+            <a href="add_task.php" class="btn-add">+ Add</a>
         </div>
     </div>
 
@@ -257,6 +258,6 @@ try {
         }
     }
     ?>
-
+<?php include 'toolbar.php'; ?>
 </body>
 </html>

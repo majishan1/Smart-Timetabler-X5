@@ -244,11 +244,6 @@ try {
         </div>
     </main>
 
-    <footer class="toolbar">
-        <button onclick="window.location.href='view_todo.php'">To-Do</button>
-        <button class="add-btn" onclick="window.location.href='dashboard.php'">🏠</button>
-        <button onclick="window.location.href='view_timetable.php'">Calendar</button>
-        <button onclick="window.location.href='settings.php'">Settings</button>
-    </footer>
+    <?php include 'toolbar.php'; ?>
 </body>
 </html>

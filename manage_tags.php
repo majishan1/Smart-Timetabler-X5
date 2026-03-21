@@ -67,6 +67,7 @@ try {
             padding: 20px;
             max-width: 600px;
             margin: 0 auto;
+            padding-bottom: 80px;
         }
         .header {
             display: flex;
@@ -141,7 +142,7 @@ try {
 
     <div class="header">
         <h2>🎨 Manage Tags</h2>
-        <a href="home.php" class="btn-back">Back</a> 
+        <a href="view_todo.php" class="btn-back">Back</a> 
     </div>
 
     <?php if (!empty($message)) echo $message; ?>
@@ -174,6 +175,6 @@ try {
         <?php endforeach; ?>
 
     <?php endif; ?>
-
+    <?php include 'toolbar.php'; ?>
 </body>
 </html>

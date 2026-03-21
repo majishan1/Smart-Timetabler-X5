@@ -38,6 +38,7 @@ try {
             padding: 20px;
             max-width: 800px;
             margin: 0 auto;
+            padding-bottom: 80px;
         }
         .header {
             display: flex;
@@ -170,6 +171,6 @@ try {
         }
     }
     ?>
-
+<?php include 'toolbar.php'; ?>
 </body>
 </html>

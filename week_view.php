@@ -61,6 +61,7 @@ catch (PDOException $e){
             padding: 20px;
             background: #fAf9f6;
             color: #264653;
+            padding-bottom: 80px;
         }
 
         h1 {
@@ -349,5 +350,6 @@ catch (PDOException $e){
             <div id='6' class='days'></div>
         </div>
     </div>
+    <?php include 'toolbar.php'; ?>
 </body>
 </html>

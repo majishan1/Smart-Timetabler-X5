@@ -9,9 +9,9 @@ function isActive($pageName, $current_file) {
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
 <footer class="toolbar">
-    <a href="home.php" class="nav-item <?php echo isActive('home.php', $current_file); ?>">
+    <a href="dashboard.php" class="nav-item <?php echo isActive('dashboard.php', $current_file); ?>">
         <span class="material-icons">home</span>
-        <span class="nav-text">Today</span>
+        <span class="nav-text">Home</span>
     </a>
     
     <a href="view_todo.php" class="nav-item <?php echo isActive('view_todo.php', $current_file); ?>">
@@ -29,10 +29,14 @@ function isActive($pageName, $current_file) {
         <span class="material-icons">calendar_today</span>
         <span class="nav-text">Calendar</span>
     </a>
+
+    <a href="settings.php" class="nav-item <?php echo isActive('settings.php', $current_file); ?>">
+        <span class="material-icons">settings</span>
+        <span class="nav-text">Settings</span>
+    </a>
 </footer>
 
 <style>
-
 .toolbar {
     position: fixed;
     bottom: 0;
@@ -93,11 +97,9 @@ function isActive($pageName, $current_file) {
     justify-content: center;
     font-size: 32px;
     font-weight: 300;
-
     box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4); 
     transition: transform 0.2s ease, background-color 0.3s, box-shadow 0.2s;
 }
-
 
 .add-btn:hover {
     transform: scale(1.15);
