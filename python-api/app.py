@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 import requests
 import icalendar
 import os 
+from icalendar import Calendar
 app = Flask(__name__)
 
 @app.route('/', methods=['GET'])
@@ -138,6 +139,59 @@ def get_commute():
         else:
             # THIS IS THE NEW FIX: Print the exact ORS error!
             return jsonify({"error": f"ORS Standard Route Error: {route_res.text}"}), 500
+
+
+@app.route('/parse_canvas', methods=['POST'])
+def parse_canvas():
+    data = request.get_json()
+    canvas_url = data.get('canvas_url')
+
+    if not canvas_url:
+        return jsonify({"error": "No Canvas URL provided"}), 400
+
+    try:
+        response = requests.get(canvas_url)
+        if response.status_code != 200:
+            return jsonify({"error": "Failed to download Canvas calendar"}), 400
+
+        cal = Calendar.from_ical(response.content)
+        deadlines = []
+
+        for component in cal.walk('vevent'):
+            # Safely grab the title
+            title = str(component.get('summary', 'Unknown Assignment'))
+            
+            # THE FIX: Safely try to get the End Date. If it's missing, grab the Start Date.
+            date_item = component.get('dtend') or component.get('dtstart')
+            
+            # If this weird event literally has no date attached to it at all, skip it entirely!
+            if not date_item or not hasattr(date_item, 'dt'):
+                continue
+                
+            due_date = date_item.dt
+            
+            # THE SECOND FIX: Canvas sometimes sends "All Day" events as pure Dates, 
+            # instead of DateTimes. We need to format them perfectly for your SQL database.
+            if type(due_date).__name__ == 'date':
+                formatted_date = due_date.strftime('%Y-%m-%d 23:59:59') # Assume 11:59 PM
+            else:
+                formatted_date = due_date.strftime('%Y-%m-%d %H:%M:%S')
+
+            deadlines.append({
+                "title": title,
+                "due_date": formatted_date,
+                "status": "pending"
+            })
+
+        return jsonify({
+            "success": True, 
+            "total_deadlines": len(deadlines),
+            "deadlines": deadlines
+        }), 200
+
+    except Exception as e:
+        print(f"🛑 CANVAS PARSE ERROR: {str(e)}")
+        return jsonify({"error": f"Failed to parse Canvas feed: {str(e)}"}), 500
     
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

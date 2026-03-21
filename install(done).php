@@ -15,7 +15,7 @@ try {
     )";
     $conn->exec($sql_users);
     echo "Table 'Users' Created succesffully .<br>";
-
+    
     // User Settings Table 
     $sql_settings = "CREATE TABLE IF NOT EXISTS User_Settings (
         UserID INT(10) UNSIGNED PRIMARY KEY,

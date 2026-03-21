@@ -17,7 +17,6 @@ $current_user_id = (string) $_SESSION['user_id'];
 $message = "";
 $message_type = "";
 
-
 $defaults = [
     'display_name' => '',
     'email' => '',
@@ -25,6 +24,8 @@ $defaults = [
     'preferred_transport' => 'public_transport',
     'start_hour' => 8,
     'end_hour' => 18,
+    'timetable_url' => '',
+    'canvas_url' => ''
 ];
 
 try {
@@ -35,39 +36,38 @@ try {
             'start_hour' => (int) ($_POST['start_hour'] ?? 8),
             'end_hour' => (int) ($_POST['end_hour'] ?? 18),
             'postcode' => trim($_POST['postcode'] ?? ''),
-            'preferred_transport' => trim($_POST['preferred_transport'] ?? 'public_transport')
+            'preferred_transport' => trim($_POST['preferred_transport'] ?? 'public_transport'),
+            'timetable_url' => trim($_POST['timetable_url'] ?? ''),
+            'canvas_url' => trim($_POST['canvas_url'] ?? '')
         ];
 
         if (!empty($settings['email']) && !filter_var($settings['email'], FILTER_VALIDATE_EMAIL)) {
             throw new Exception("Please enter a valid email address.");
         }
-
         if ($settings['start_hour'] < 0 || $settings['start_hour'] > 23) {
             throw new Exception("Start hour must be between 0 and 23.");
         }
-
         if ($settings['end_hour'] < 0 || $settings['end_hour'] > 23) {
             throw new Exception("End hour must be between 0 and 23.");
         }
 
+        $sql_settings = "INSERT INTO User_Settings (
+                            UserID, display_name, email,
+                            start_hour, end_hour, postcode, preferred_transport
+                        ) VALUES (
+                            :UserID, :display_name, :email,
+                            :start_hour, :end_hour, :postcode, :preferred_transport
+                        )
+                        ON DUPLICATE KEY UPDATE
+                            display_name = VALUES(display_name),
+                            email = VALUES(email),
+                            start_hour = VALUES(start_hour),
+                            end_hour = VALUES(end_hour),
+                            postcode = VALUES(postcode),
+                            preferred_transport = VALUES(preferred_transport)";
 
-        $sql = "INSERT INTO User_Settings (
-                    UserID, display_name, email,
-                    start_hour, end_hour, postcode, preferred_transport
-                ) VALUES (
-                    :UserID, :display_name, :email,
-                    :start_hour, :end_hour, :postcode, :preferred_transport
-                )
-                ON DUPLICATE KEY UPDATE
-                    display_name = VALUES(display_name),
-                    email = VALUES(email),
-                    start_hour = VALUES(start_hour),
-                    end_hour = VALUES(end_hour),
-                    postcode = VALUES(postcode),
-                    preferred_transport = VALUES(preferred_transport)";
-
-        $stmt = $conn->prepare($sql);
-        $stmt->execute([
+        $stmt_settings = $conn->prepare($sql_settings);
+        $stmt_settings->execute([
             ':UserID' => $current_user_id,
             ':display_name' => $settings['display_name'],
             ':email' => $settings['email'],
@@ -77,16 +77,84 @@ try {
             ':preferred_transport' => $settings['preferred_transport']
         ]);
 
-        $message = "Settings saved successfully.";
+
+        $sql_links = "INSERT INTO Timetable_Links (
+                        UserID, ical_url, canvas_url
+                      ) VALUES (
+                        :UserID, :ical_url, :canvas_url
+                      )
+                      ON DUPLICATE KEY UPDATE
+                        ical_url = VALUES(ical_url),
+                        canvas_url = VALUES(canvas_url)";
+
+        $stmt_links = $conn->prepare($sql_links);
+        $stmt_links->execute([
+            ':UserID' => $current_user_id,
+            ':ical_url' => $settings['timetable_url'], 
+            ':canvas_url' => $settings['canvas_url']
+        ]);
+
+        $sync_message = "";
+
+      
+        if (!empty($settings['canvas_url'])) {
+            $ch = curl_init('https://timetable-api-ebyk.onrender.com/parse_canvas');
+            $payload = json_encode(['canvas_url' => $settings['canvas_url']]);
+            
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/json',
+                'Content-Length: ' . strlen($payload)
+            ]);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 20); // Give python server time
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+
+            $response = curl_exec($ch);
+            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($http_code == 200) {
+                $data = json_decode($response, true);
+                if (isset($data['deadlines'])) {
+                    $added_count = 0;
+                    
+                    // Prepare statements for checking and inserting
+                    $stmt_check = $conn->prepare("SELECT AssignmentID FROM Canvas_Assignments WHERE UserID = ? AND title = ?");
+                    $stmt_insert = $conn->prepare("INSERT INTO Canvas_Assignments (UserID, title, due_date) VALUES (?, ?, ?)");
+
+                    foreach ($data['deadlines'] as $task) {
+                        // Check if we already have this exact assignment saved
+                        $stmt_check->execute([$current_user_id, $task['title']]);
+                        if (!$stmt_check->fetch()) {
+                            // If it's brand new insert it
+                            $stmt_insert->execute([$current_user_id, $task['title'], $task['due_date']]);
+                            $added_count++;
+                        }
+                    }
+                    $sync_message = "<br>Successfully synced {$added_count} new Canvas assignments!";
+                }
+            } else {
+                $sync_message = "<br>Settings saved, but Canvas sync failed";
+            }
+        }
+
+        $message = "Settings saved successfully." . $sync_message;
         $message_type = "success";
     }
 
-    // Fixed typo here: UserSettings -> User_Settings
-    $stmt = $conn->prepare("SELECT * FROM User_Settings WHERE UserID = :uid LIMIT 1");
-    $stmt->execute([':uid' => $current_user_id]);
-    $saved_settings = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    $settings = $saved_settings ? array_merge($defaults, $saved_settings) : $defaults;
+    $stmt1 = $conn->prepare("SELECT * FROM User_Settings WHERE UserID = :uid LIMIT 1");
+    $stmt1->execute([':uid' => $current_user_id]);
+    $saved_settings = $stmt1->fetch(PDO::FETCH_ASSOC) ?: [];
+
+    $stmt2 = $conn->prepare("SELECT ical_url AS timetable_url, canvas_url FROM Timetable_Links WHERE UserID = :uid LIMIT 1");
+    $stmt2->execute([':uid' => $current_user_id]);
+    $saved_links = $stmt2->fetch(PDO::FETCH_ASSOC) ?: [];
+
+    $combined_saved_data = array_merge($saved_settings, $saved_links);
+    $settings = array_merge($defaults, $combined_saved_data);
 
 } catch (Exception $e) {
     $settings = $defaults;
@@ -110,10 +178,10 @@ try {
 <body>
     <h2 class="title">User Settings</h2>
 
-    <main id="AddPage">
+    <main id="AddPage" style="padding-bottom: 80px;">
         <?php if (!empty($message)): ?>
-            <div class="<?php echo $message_type === 'success' ? 'settings-message success-message' : 'settings-message error-message'; ?>">
-                <?php echo htmlspecialchars($message); ?>
+            <div class="<?php echo $message_type === 'success' ? 'settings-message success-message' : 'settings-message error-message'; ?>" style="line-height: 1.5;">
+                <?php echo $message; ?>
             </div>
         <?php endif; ?>
 
@@ -122,12 +190,10 @@ try {
                 
                 <section class="settings-section">
                     <h3>Profile</h3>
-
                     <div class="input-group">
                         <label for="display_name">Display Name</label>
                         <input type="text" id="display_name" name="display_name" value="<?php echo htmlspecialchars($settings['display_name']); ?>" placeholder="How we should call you" />
                     </div>
-
                     <div class="input-group">
                         <label for="email">Email Address</label>
                         <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($settings['email']); ?>" placeholder="your.name@student.manchester.ac.uk" />
@@ -135,16 +201,22 @@ try {
                 </section>
 
                 <section class="settings-section">
-                    <h3>Timetable Preferences</h3>
-
-                    <div class="row">
+                    <h3>Timetable & Links</h3>
+                    <div class="input-group">
+                        <label for="timetable_url">University Timetable URL</label>
+                        <input type="text" id="timetable_url" name="timetable_url" value="<?php echo htmlspecialchars($settings['timetable_url']); ?>" placeholder="Paste your university .ics link" />
+                    </div>
+                    <div class="input-group">
+                        <label for="canvas_url">Canvas Deadlines URL</label>
+                        <input type="text" id="canvas_url" name="canvas_url" value="<?php echo htmlspecialchars($settings['canvas_url']); ?>" placeholder="Paste your Canvas calendar feed link" />
+                    </div>
+                    <div class="row" style="margin-top: 15px;">
                         <div class="input-group narrow">
-                            <label for="start_hour">Start Hour</label>
+                            <label for="start_hour">Day Starts</label>
                             <input type="number" id="start_hour" name="start_hour" min="0" max="23" value="<?php echo htmlspecialchars($settings['start_hour']); ?>" />
                         </div>
-
                         <div class="input-group narrow">
-                            <label for="end_hour">End Hour</label>
+                            <label for="end_hour">Day Ends</label>
                             <input type="number" id="end_hour" name="end_hour" min="0" max="23" value="<?php echo htmlspecialchars($settings['end_hour']); ?>" />
                         </div>
                     </div>
@@ -152,12 +224,10 @@ try {
 
                 <section class="settings-section">
                     <h3>Commute & Location</h3>
-
                     <div class="input-group">
                         <label for="postcode">Home Postcode</label>
                         <input type="text" id="postcode" name="postcode" value="<?php echo htmlspecialchars($settings['postcode']); ?>" placeholder="e.g. M13 9PL" />
                     </div>
-
                     <div class="input-group wide">
                         <label for="preferred_transport">Preferred Transport</label>
                         <select id="preferred_transport" name="preferred_transport">
@@ -169,14 +239,14 @@ try {
                     </div>
                 </section>
 
-                <button type="submit">Save Settings</button>
+                <button type="submit">Save & Sync</button>
             </form>
         </div>
     </main>
 
     <footer class="toolbar">
         <button onclick="window.location.href='view_todo.php'">To-Do</button>
-        <button class="add-btn" onclick="window.location.href='home.php'">+</button>
+        <button class="add-btn" onclick="window.location.href='dashboard.php'">🏠</button>
         <button onclick="window.location.href='view_timetable.php'">Calendar</button>
         <button onclick="window.location.href='settings.php'">Settings</button>
     </footer>
