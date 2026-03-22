@@ -55,6 +55,9 @@ function remove_events() {
 }
 
 function update_events(events) {
+    let event_template = document.getElementById("event-block-template");
+    let extended_template = document.getElementById("extended-event-template");
+
     for (var i = 0; i < events.length; i++) {
         let event = events[i];
 
@@ -69,47 +72,50 @@ function update_events(events) {
 
         let day_col = document.getElementById(String(event_day));
 
-        // For the standard (unselected) event blocks
-        let new_event_div = document.createElement('div');
-        new_event_div.className = "event_block" + " " + event.type.toUpperCase();
+        // Standard event block using template
+        let event_clone = event_template.content.cloneNode(true);
+        let new_event_div = event_clone.querySelector('.event_block');
+
+        new_event_div.className = "event_block " + event.type.toUpperCase();
         new_event_div.id = event.EventID;
         new_event_div.textContent = event.module;
-        new_event_div.style.top = mins_into_day + "px"
-        new_event_div.style.height = event_dur + "px"
-        new_event_div.addEventListener('click', function() {show_extended(new_event_div.id)});
+        new_event_div.style.top = mins_into_day + "px";
+        new_event_div.style.height = event_dur + "px";
+        new_event_div.addEventListener('click', function() {
+            show_extended(event.EventID);
+        });
 
-        day_col.appendChild(new_event_div);
+        day_col.appendChild(event_clone);
 
-        //For extended (selected) event blocks
-        let extended_event_div = document.createElement('div');
-        let end_time = new Date((event_time.getTime() + event_dur * 60000));
+        // Extended event block using template
+        let extended_clone = extended_template.content.cloneNode(true);
+        let extended_event_div = extended_clone.querySelector('.extended_block');
+
+        let end_time = new Date(event_time.getTime() + event_dur * 60000);
 
         let min_hour = {hour: '2-digit', minute: '2-digit'};
         let start_t = event_time.toLocaleTimeString([], min_hour);
         let end_t = end_time.toLocaleTimeString([], min_hour);
 
-
         extended_event_div.className = event.type.toUpperCase() + " extended_block";
         extended_event_div.id = "e" + event.EventID;
         extended_event_div.style.visibility = "hidden";
 
-        extended_event_div.innerHTML = `
-        <div class="ext_header">
-            <h3>${escapeHTML(event.module)}</h3>
-            <button type="button" class="close_button" onclick="hide_extended('${escapeHTML(event.EventID)}')">&times;</button>
-        </div>
-        <div class="ext_body">
-            <p><strong>Type: </strong>${escapeHTML(event.type)}</p>
-            <p><strong>Time: </strong>${escapeHTML(start_t)} - ${escapeHTML(end_t)}</p>
-            <p><strong>Location: </strong>${escapeHTML(event.location || 'TBC')}</p>
-            <p><strong>Staff: </strong>${escapeHTML(event.staff || 'TBC')}</p>
-        </div>`
+        extended_clone.querySelector('.ext_title').textContent = event.module;
+        extended_clone.querySelector('.ext_type').textContent = event.type;
+        extended_clone.querySelector('.ext_time').textContent = start_t + " - " + end_t;
+        extended_clone.querySelector('.ext_location').textContent = event.location || 'TBC';
+        extended_clone.querySelector('.ext_staff').textContent = event.staff || 'TBC';
 
-        document.body.appendChild(extended_event_div);
+        extended_clone.querySelector('.close_button').addEventListener('click', function() {
+            hide_extended(event.EventID);
+        });
+
+        document.body.appendChild(extended_clone);
     }
+
     handle_collisions(check_collisions(events));
 }
-
 function check_collisions (events) {
     let colliding_clusters = [];
     let cur_cluster = [];
@@ -195,21 +201,24 @@ function set_date_bar() {
     let this_week_s = get_start_of_week();
     let days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     let titles_div = document.getElementById('-1');
+    let template = document.getElementById('day-header-template');
 
     for (var i = 0; i < days.length; i++) {
         let name = days[i];
-        let name_div = document.createElement('div');
-        name_div.className = "day_name";
-        name_div.id = "d" + i;
-        name_div.innerHTML = name + "<br>" + this_week_s.getDate();
+        let clone = template.content.cloneNode(true);
+        let day_div = clone.querySelector('.day_name');
+
+        day_div.id = "d" + i;
+        day_div.innerHTML = name + "<br>" + this_week_s.getDate();
+
         this_week_s.setDate(this_week_s.getDate() + 1);
-        titles_div.appendChild(name_div);
+        titles_div.appendChild(clone);
     }
 
     if (week_offset === 0) {
         let today = new Date();
         let day = document.getElementById('d' + today.getDay());
-        day.className += ' today'
+        day.className += ' today';
     }
 }
 
