@@ -52,9 +52,10 @@ try {
                 'description' => $row['description'],
                 'deadline' => $row['deadline'],
                 'duration' => $row['duration'],
+                'is_complete' => $row['is_complete'],
+                'completed_at' => $row['completed_at'],
                 'tags' => [] 
             ];
-        }
         
 
         if (!empty($row['tag_name'])) {
@@ -180,6 +181,14 @@ try {
             color: #666;
             border: 2px dashed #ccc;
         }
+        .completed-task {
+            opacity: 0.6;
+            background: #f1f1f1;
+        }
+
+        .completed-task .todo-title {
+            text-decoration: line-through;
+        }
     </style>
 </head>
 <body>
@@ -237,13 +246,17 @@ try {
             $card_class = ($type_lower == 'event') ? 'event' : 'task';
             ?>
             
-            <div class="todo-card <?php echo $card_class; ?>">
+            <div class="todo-card <?php echo $card_class; ?> <?php echo ($todo['is_complete'] == 1) ? 'completed-task' : ''; ?>">
                 
                 <div class="checkbox-container">
-                    <form method="POST" action="toggle_todo.php">
-                        <input type="hidden" name="taskID" value="<?php echo $todo['taskID']; ?>">
-                        <input type="checkbox" title="Mark as complete" onchange="this.form.submit()">
-                    </form>
+                    <?php if ($todo['is_complete'] == 0): ?>
+                        <form method="POST" action="toggle_todo.php">
+                            <input type="hidden" name="taskID" value="<?php echo $todo['taskID']; ?>">
+                            <input type="checkbox" title="Mark as complete" onchange="this.form.submit()">
+                        </form>
+                    <?php else: ?>
+                        <input type="checkbox" checked disabled title="Task completed">
+                    <?php endif; ?>
                 </div>
                 
                 <div class="todo-content">
