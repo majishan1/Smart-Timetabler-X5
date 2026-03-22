@@ -24,11 +24,16 @@ $error_message = "";
 try {
     //Using a left join, so that tasks with no tags are still retrieved 
     $sql = "SELECT ToDo.*, Tags.tag_name, Tags.color 
-            FROM ToDo 
-            LEFT JOIN ToDo_Tags ON ToDo.taskID = ToDo_Tags.taskID
-            LEFT JOIN Tags ON ToDo_Tags.TagID = Tags.TagID
-            WHERE ToDo.UserID = :uid AND ToDo.is_complete = 0 
-            ORDER BY ToDo.deadline ASC";
+        FROM ToDo 
+        LEFT JOIN ToDo_Tags ON ToDo.taskID = ToDo_Tags.taskID
+        LEFT JOIN Tags ON ToDo_Tags.TagID = Tags.TagID
+        WHERE ToDo.UserID = :uid
+        AND (
+            ToDo.is_complete = 0
+            OR
+            (ToDo.is_complete = 1 AND ToDo.completed_at >= DATE_SUB(NOW(), INTERVAL 1 DAY))
+        )
+        ORDER BY ToDo.deadline ASC";
             
     $stmt = $conn->prepare($sql);
     $stmt->execute([':uid' => $current_user_id]);
