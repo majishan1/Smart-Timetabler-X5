@@ -16,6 +16,8 @@ require 'db_connect.php';
 $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 $current_user_id = $_SESSION['user_id'];
+include 'reschedule_tasks.php';
+
 $todos = [];
 $error_message = "";
 
@@ -185,6 +187,18 @@ try {
         </div>
     </div>
 
+    <?php if ($rescheduled_count > 0): ?>
+        <p style="color: orange; font-weight: bold;">
+            <?php echo $rescheduled_count; ?> overdue task(s) were moved to a later date.
+        </p>
+    <?php endif; ?>
+
+    <?php if (!empty($reschedule_error)): ?>
+        <p style="color: red; font-weight: bold;">
+            Rescheduling error: <?php echo $reschedule_error; ?>
+        </p>
+    <?php endif; ?>
+
     <?php if ($error_message): ?>
         <p style="color: red;"><?php echo $error_message; ?></p>
     <?php endif; ?>
@@ -221,7 +235,10 @@ try {
             <div class="todo-card <?php echo $card_class; ?>">
                 
                 <div class="checkbox-container">
-                    <input type="checkbox" title="Mark as complete">
+                    <form method="POST" action="toggle_todo.php">
+                        <input type="hidden" name="taskID" value="<?php echo $todo['taskID']; ?>">
+                        <input type="checkbox" title="Mark as complete" onchange="this.form.submit()">
+                    </form>
                 </div>
                 
                 <div class="todo-content">
