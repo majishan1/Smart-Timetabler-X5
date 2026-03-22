@@ -322,6 +322,28 @@ catch (PDOException $e){
         let week_events = null;
         const events = <?php echo json_encode($events) ?>;
     </script>
+    <template id="day-header-template">
+    <div class="day_name"></div>
+    </template>
+
+    <template id="event-block-template">
+        <div class="event_block"></div>
+    </template>
+
+    <template id="expanded-event-template">
+        <div class="extended_block" style="visibility: hidden;">
+            <div class="ext_header">
+                <h3 class="ext_title"></h3>
+                <button type="button" class="close_button">&times;</button>
+            </div>
+            <div class="ext_body">
+                <p><strong>Type: </strong><span class="ext_type"></span></p>
+                <p><strong>Time: </strong><span class="ext_time"></span></p>
+                <p><strong>Location: </strong><span class="ext_location"></span></p>
+                <p><strong>Staff: </strong><span class="ext_staff"></span></p>
+            </div>
+        </div>
+    </template>
     <script src="week_view.js" defer></script>
 
 </head>
