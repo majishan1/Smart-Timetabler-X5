@@ -14,7 +14,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     try {
         $sql = "UPDATE ToDo 
-                SET is_complete = 1 
+                SET is_complete = 1, completed_at = NOW()
                 WHERE taskID = :taskID AND UserID = :uid";
 
         $stmt = $conn->prepare($sql);
@@ -32,5 +32,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 } else {
     header("Location: view_todo.php");
     exit();
+}
+?>
 }
 ?>
