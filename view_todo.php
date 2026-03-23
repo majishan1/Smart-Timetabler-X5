@@ -39,11 +39,9 @@ try {
     $stmt->execute([':uid' => $current_user_id]);
     $raw_results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-
     foreach ($raw_results as $row) {
         $id = $row['taskID'];
         
-
         if (!isset($todos[$id])) {
             $todos[$id] = [
                 'taskID' => $row['taskID'],
@@ -56,7 +54,7 @@ try {
                 'completed_at' => $row['completed_at'],
                 'tags' => [] 
             ];
-        
+        } // <--- THIS WAS THE MISSING BRACE YOUR TEAMMATE FORGOT!
 
         if (!empty($row['tag_name'])) {
             $todos[$id]['tags'][] = [
@@ -70,7 +68,6 @@ try {
     $error_message = "Database Error: " . $e->getMessage();
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
