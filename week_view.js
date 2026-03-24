@@ -10,33 +10,48 @@ function jump_today() {
 
 function new_week(offset_change) {
     week_offset += offset_change;
-    get_week_events();
+    get_week_items(true);
     remove_events();
-    update_events(week_events);
+    update_tasks(week_events);
+
+    get_week_items(false);
+    update_tasks(week_tasks);
+    handle_collisions(check_collisions(week_events.concat(week_tasks)));
+
     remove_date_bar();
     set_date_bar();
     find_month();
     cur_time_shown();
 }
 
-function get_week_events() {
+function get_week_items(is_events) {
     let week_start = get_start_of_week();
 
     let week_end = new Date(week_start);
     week_end.setDate(week_start.getDate() + 6);
     week_end.setHours(23, 59, 59);
 
-    let selected_events = [];
+    let selected_items = [];
 
-    for (var i = 0; i < events.length; i++) {
-        let event = events[i];
-        if (!event.start_time) continue;
-        let ev_date = new Date(event.start_time.replace(' ', 'T'));
-        if (ev_date >= week_start && ev_date <= week_end) {
-            selected_events.push(event);
+    if (is_events === true) {
+        for (var i = 0; i < events.length; i++) {
+            let event = events[i];
+            if (!event.start_time) continue;
+            let ev_date = new Date(event.start_time.replace(' ', 'T'));
+            if (ev_date >= week_start && ev_date <= week_end) {
+                selected_items.push(event);
+            }
         }
     }
-    week_events = selected_events;
+    else {
+        for (var i = 0; i < toDo.length; i++) {
+            let task = toDo[i];
+            if (!task.start_time) continue;
+            let task_deadline = new Date(task.start_time.replace(' ', 'T'));
+            if (task_deadline >= week_start && task_deadline <= week_end) selected_items.push(task);
+        }
+    }
+    (is_events === true)? week_events = selected_items: week_tasks = selected_items;
 }
 
 function get_start_of_week() {
@@ -54,10 +69,7 @@ function remove_events() {
     document.querySelectorAll('.event_block, .extended_block').forEach(event => event.remove());
 }
 
-function update_events(events) {
-    let event_template = document.getElementById("event-block-template");
-    let extended_template = document.getElementById("extended-event-template");
-
+function update_tasks(events) {
     for (var i = 0; i < events.length; i++) {
         let event = events[i];
 
@@ -72,51 +84,76 @@ function update_events(events) {
 
         let day_col = document.getElementById(String(event_day));
 
-        // Standard event block using template
-        let event_clone = event_template.content.cloneNode(true);
-        let new_event_div = event_clone.querySelector('.event_block');
-
+        // For the standard (unselected) event blocks
+        let new_event_div = document.createElement('div');
         new_event_div.className = "event_block " + event.type.toUpperCase();
-        new_event_div.id = event.EventID;
-        new_event_div.textContent = event.module;
-        new_event_div.style.top = mins_into_day + "px";
-        new_event_div.style.height = event_dur + "px";
-        new_event_div.addEventListener('click', function() {
-            show_extended(event.EventID);
-        });
+        if (!event.tskType) {
+            new_event_div.id = "ev" + event.EventID;
+            new_event_div.textContent = event.module;
+        }
+        else {
+            new_event_div.id = "tk" + event.taskID;
+            new_event_div.textContent = event.title;
+            new_event_div.style.backgroundColor = `color-mix(in srgb , ${event.color} 30%, white 70%)`;
+            new_event_div.style.borderColor = `color-mix(in srgb , ${event.color} 20%, white 80%)`;
+            new_event_div.style.borderLeftColor = event.color;
+        }
 
-        day_col.appendChild(event_clone);
+        new_event_div.style.top = mins_into_day + "px"
+        new_event_div.style.height = event_dur + "px"
+        new_event_div.addEventListener('click', function() {show_extended(new_event_div.id)});
 
-        // Extended event block using template
-        let extended_clone = extended_template.content.cloneNode(true);
-        let extended_event_div = extended_clone.querySelector('.extended_block');
+        day_col.appendChild(new_event_div);
 
-        let end_time = new Date(event_time.getTime() + event_dur * 60000);
+        //For extended (selected) event blocks
+        let extended_event_div = document.createElement('div');
 
+        let end_time = new Date((event_time.getTime() + event_dur * 60000));
         let min_hour = {hour: '2-digit', minute: '2-digit'};
         let start_t = event_time.toLocaleTimeString([], min_hour);
         let end_t = end_time.toLocaleTimeString([], min_hour);
 
         extended_event_div.className = event.type.toUpperCase() + " extended_block";
-        extended_event_div.id = "e" + event.EventID;
+        if (!event.tskType) {
+
+            extended_event_div.id = "eev" + event.EventID;        
+            extended_event_div.innerHTML = `
+            <div class="ext_header">
+                <h3>${escapeHTML(event.module)}</h3>
+                <button type="button" class="close_button" onclick="hide_extended('${escapeHTML('ev' + event.EventID)}')">&times;</button>
+            </div>
+            <div class="ext_body">
+                <p><strong>Type: </strong>${escapeHTML(event.type)}</p>
+                <p><strong>Time: </strong>${escapeHTML(start_t)} - ${escapeHTML(end_t)}</p>
+                <p><strong>Location: </strong>${escapeHTML(event.location || 'TBC')}</p>
+                <p><strong>Staff: </strong>${escapeHTML(event.staff || 'TBC')}</p>
+            </div>`
+        }
+
+        else {
+            extended_event_div.id = "etk" + event.taskID;
+            extended_event_div.innerHTML = `
+            <div class="ext_header">
+                <h3>${escapeHTML(event.title)}</h3>
+                <button type="button" class="close_button" onclick="hide_extended('${escapeHTML('tk' + event.taskID)}')">&times;</button>
+            </div>
+            <div class="ext_body">
+                <p><strong>Type: </strong>${escapeHTML(event.type)}</p>
+                <p><strong>Description: </strong>${escapeHTML(event.description)}</p>
+                <p><strong>Time: </strong>${escapeHTML(start_t)} - ${escapeHTML(end_t)}</p>
+            </div>`
+            extended_event_div.style.backgroundColor = `color-mix(in srgb , ${event.color} 30%, white 70%)`;
+            extended_event_div.style.borderColor = `color-mix(in srgb , ${event.color} 20%, white 80%)`;
+            extended_event_div.style.borderLeftColor = event.color;
+        }
+
         extended_event_div.style.visibility = "hidden";
-
-        extended_clone.querySelector('.ext_title').textContent = event.module;
-        extended_clone.querySelector('.ext_type').textContent = event.type;
-        extended_clone.querySelector('.ext_time').textContent = start_t + " - " + end_t;
-        extended_clone.querySelector('.ext_location').textContent = event.location || 'TBC';
-        extended_clone.querySelector('.ext_staff').textContent = event.staff || 'TBC';
-
-        extended_clone.querySelector('.close_button').addEventListener('click', function() {
-            hide_extended(event.EventID);
-        });
-
-        document.body.appendChild(extended_clone);
+        document.body.appendChild(extended_event_div);
     }
-
-    handle_collisions(check_collisions(events));
 }
-function check_collisions (events) {
+ 
+
+function check_collisions(events) {
     let colliding_clusters = [];
     let cur_cluster = [];
     let cur_cluster_end = 0;
@@ -144,7 +181,8 @@ function check_collisions (events) {
             }
             else {
                 colliding_clusters.push(cur_cluster);
-                cur_cluster = [];
+                cur_cluster = [events[i]];
+                cur_cluster_end = ev_e;
             }
         }
     }
@@ -183,9 +221,12 @@ function handle_collisions(collisions_arr) {
         let ev_widths = 97.5 / total_lanes;
         for (var l = 0; l < collisions_arr[i].length; l++) {
             let ev = collisions_arr[i][l];
-            let ev_block = document.getElementById(ev.EventID);
-            ev_block.style.width = ev_widths + "%";
-            ev_block.style.left = (1.25 + (ev.lane * ev_widths)) + "%";
+            let ev_id = ev.tskType? 'tk' + ev.taskID: 'ev' + ev.EventID;
+            let ev_block = document.getElementById(ev_id);
+            if (ev_block) {
+                ev_block.style.width = ev_widths + "%";
+                ev_block.style.left = (1.25 + (ev.lane * ev_widths)) + "%";
+            }
         }
     }
 }
@@ -201,18 +242,15 @@ function set_date_bar() {
     let this_week_s = get_start_of_week();
     let days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     let titles_div = document.getElementById('-1');
-    let template = document.getElementById('day-header-template');
 
     for (var i = 0; i < days.length; i++) {
         let name = days[i];
-        let clone = template.content.cloneNode(true);
-        let day_div = clone.querySelector('.day_name');
-
-        day_div.id = "d" + i;
-        day_div.innerHTML = name + "<br>" + this_week_s.getDate();
-
+        let name_div = document.createElement('div');
+        name_div.className = "day_name";
+        name_div.id = "d" + i;
+        name_div.innerHTML = name + "<br>" + this_week_s.getDate();
         this_week_s.setDate(this_week_s.getDate() + 1);
-        titles_div.appendChild(clone);
+        titles_div.appendChild(name_div);
     }
 
     if (week_offset === 0) {
@@ -314,6 +352,12 @@ function escapeHTML(text) {
 }
 
 // Shows the days of the week and dates when program loaded
+toDo.forEach(task => {
+    task.start_time = task.deadline;
+    task.tskType = 1;
+    delete task.deadline;
+})
+
 jump_today();
 calc_and_show_cur_time();
 
