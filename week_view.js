@@ -8,14 +8,19 @@ function jump_today() {
     new_week(0);
 }
 
-function new_week(offset_change) {
+async function new_week(offset_change) {
     week_offset += offset_change;
-    get_week_items(true);
+
+    let week_items = await get_week_items();
+    if (!week_items) return;
+    let week_events = week_items[0];
+    let week_tasks = week_items[1];
+
     remove_events();
     update_tasks(week_events);
-
-    get_week_items(false);
     update_tasks(week_tasks);
+
+
     handle_collisions(check_collisions(week_events.concat(week_tasks)));
 
     remove_date_bar();
@@ -24,34 +29,49 @@ function new_week(offset_change) {
     cur_time_shown();
 }
 
-function get_week_items(is_events) {
+async function get_week_items() {
     let week_start = get_start_of_week();
 
     let week_end = new Date(week_start);
     week_end.setDate(week_start.getDate() + 6);
     week_end.setHours(23, 59, 59);
 
-    let selected_items = [];
+    try {
+        let response = await fetch(`get_week_items.php?start=${dt_to_SQL_format(week_start)}&end=${dt_to_SQL_format(week_end)}`)
+        let data = await response.json();
 
-    if (is_events === true) {
-        for (var i = 0; i < events.length; i++) {
-            let event = events[i];
-            if (!event.start_time) continue;
-            let ev_date = new Date(event.start_time.replace(' ', 'T'));
-            if (ev_date >= week_start && ev_date <= week_end) {
-                selected_items.push(event);
-            }
+        if (data.error) {
+            console.error("Server Error:", data.error);
+            return;
         }
+
+        let week_events = data.events;
+        week_events.forEach(event => {
+            event.start_time = new Date(event.start_time.replace(' ', 'T'));
+            event.tskType = 'event';
+        });
+
+        let week_tasks = data.toDo;
+        week_tasks.forEach(task => {
+            task.start_time = new Date(task.deadline.replace(' ', 'T'));
+            task.tskType = 'task';
+            delete task.deadline;
+        });
+
+        let week_assignments = data.assignments;
+        week_assignments.forEach(assignment => {
+            assignment.start_time = new Date(assignment.due_date.replace(' ', 'T'));
+            assignment.duration = 20;
+            assignment.tskType = 'assignment';
+            delete assignment.due_date;
+        })
+
+        return [week_events, week_tasks, week_assignments];
     }
-    else {
-        for (var i = 0; i < toDo.length; i++) {
-            let task = toDo[i];
-            if (!task.start_time) continue;
-            let task_deadline = new Date(task.start_time.replace(' ', 'T'));
-            if (task_deadline >= week_start && task_deadline <= week_end) selected_items.push(task);
-        }
+    catch (err) {
+        console.error("AJAX request failed: ", err);
+        return;
     }
-    (is_events === true)? week_events = selected_items: week_tasks = selected_items;
 }
 
 function get_start_of_week() {
@@ -74,7 +94,7 @@ function update_tasks(events) {
         let event = events[i];
 
         let event_dur = parseInt(event.duration);
-        let event_time = new Date(event.start_time.replace(' ', 'T'));
+        let event_time = event.start_time;
 
         let event_day = event_time.getDay();
         let event_hour = event_time.getHours();
@@ -87,11 +107,11 @@ function update_tasks(events) {
         // For the standard (unselected) event blocks
         let new_event_div = document.createElement('div');
         new_event_div.className = "event_block " + event.type.toUpperCase();
-        if (!event.tskType) {
+        if (event.tskType === 'event') {
             new_event_div.id = "ev" + event.EventID;
             new_event_div.textContent = event.module;
         }
-        else {
+        else if (event.tskType === 'task') {
             new_event_div.id = "tk" + event.taskID;
             new_event_div.textContent = event.title;
             new_event_div.style.backgroundColor = `color-mix(in srgb , ${event.color} 30%, white 70%)`;
@@ -108,13 +128,14 @@ function update_tasks(events) {
         //For extended (selected) event blocks
         let extended_event_div = document.createElement('div');
 
-        let end_time = new Date((event_time.getTime() + event_dur * 60000));
         let min_hour = {hour: '2-digit', minute: '2-digit'};
+        let end_time = new Date((event_time.getTime() + event_dur * 60000));
         let start_t = event_time.toLocaleTimeString([], min_hour);
         let end_t = end_time.toLocaleTimeString([], min_hour);
 
+
         extended_event_div.className = event.type.toUpperCase() + " extended_block";
-        if (!event.tskType) {
+        if (event.tskType === 'event') {
 
             extended_event_div.id = "eev" + event.EventID;        
             extended_event_div.innerHTML = `
@@ -130,7 +151,7 @@ function update_tasks(events) {
             </div>`
         }
 
-        else {
+        else if (event.tskType === 'task') {
             extended_event_div.id = "etk" + event.taskID;
             extended_event_div.innerHTML = `
             <div class="ext_header">
@@ -158,11 +179,11 @@ function check_collisions(events) {
     let cur_cluster = [];
     let cur_cluster_end = 0;
 
-    events.sort((a, b) => new Date(a.start_time.replace(' ', 'T')) - new Date(b.start_time.replace(' ', 'T')));
+    events.sort((a, b) => a.start_time - b.start_time);
 
     for (var i = 0; i < events.length; i++) {
 
-        let ev_s = new Date(events[i].start_time.replace(' ', 'T')).getTime();
+        let ev_s = events[i].start_time.getTime();
         let ev_e = ev_s + events[i].duration * 60000;
 
         // if no current collision
@@ -197,7 +218,7 @@ function handle_collisions(collisions_arr) {
 
         for (var j = 0; j < no_colliding; j++) {
             let event = collisions_arr[i][j];
-            let ev_start = new Date(event.start_time.replace(' ', 'T'));
+            let ev_start = event.start_time;
             let ev_height = new Date(ev_start.getTime() + event.duration * 60000);
             let ev_lane = -1;
 
@@ -221,7 +242,7 @@ function handle_collisions(collisions_arr) {
         let ev_widths = 97.5 / total_lanes;
         for (var l = 0; l < collisions_arr[i].length; l++) {
             let ev = collisions_arr[i][l];
-            let ev_id = ev.tskType? 'tk' + ev.taskID: 'ev' + ev.EventID;
+            let ev_id = (ev.tskType === 'task')? 'tk' + ev.taskID: 'ev' + ev.EventID;
             let ev_block = document.getElementById(ev_id);
             if (ev_block) {
                 ev_block.style.width = ev_widths + "%";
@@ -256,7 +277,7 @@ function set_date_bar() {
     if (week_offset === 0) {
         let today = new Date();
         let day = document.getElementById('d' + today.getDay());
-        day.className += ' today';
+        day.className += ' today'
     }
 }
 
@@ -351,12 +372,13 @@ function escapeHTML(text) {
     return String(text).replace(/[&<>"']/g, function(m) { return map[m];});
 }
 
+function dt_to_SQL_format(date) {
+    // MySQL doesn't accept .js date object, so need to convert to ISO format
+    const pad = (num) => num.toString().padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
 // Shows the days of the week and dates when program loaded
-toDo.forEach(task => {
-    task.start_time = task.deadline;
-    task.tskType = 1;
-    delete task.deadline;
-})
 
 jump_today();
 calc_and_show_cur_time();
