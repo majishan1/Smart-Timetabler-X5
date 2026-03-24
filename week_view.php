@@ -1,42 +1,9 @@
 <?php
-session_start();
-
 if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit();
-}
-
-include 'db_connect.php';
-$current_uID = $_SESSION['user_id'];
-$events = [];
-$err = "";
-
-try {
-    // SQL for the University calendar events
-    $ev_sql = "SELECT * FROM Events WHERE UserID = :u_ID ORDER BY start_time ASC";
-    $statement = $conn->prepare($ev_sql);
-    $statement->execute(['u_ID' => $current_uID]);
-
-    $events = $statement->fetchAll(PDO::FETCH_ASSOC);
-
-    // SQL for the ToDo events
-    $td_sql = "SELECT ToDo.*, Tags.color
-            FROM ToDo
-            LEFT JOIN ToDo_Tags ON ToDo_Tags.taskID = ToDo.taskID
-            LEFT JOIN Tags ON Tags.TagID = ToDo_Tags.TagID
-            WHERE ToDo.UserID = :u_ID AND ToDo.is_complete = 0
-            ORDER BY ToDo.deadline ASC";
-    $statement = $conn->prepare($td_sql);
-    $statement->execute(['u_ID' => $current_uID]);
-
-    $toDo = $statement->fetchall(PDO::FETCH_ASSOC);
-}
-catch (PDOException $e){
-    $err = "Error: " . $e->getMessage();
+    header('Location: login.php');
     exit();
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -331,11 +298,6 @@ catch (PDOException $e){
 
     <script>
         let week_offset = 0;
-        let week_events = null;
-        let week_tasks = null;
-        let week_due = null;
-        const events = <?php echo json_encode($events)?>;
-        const toDo = <?php echo json_encode($toDo)?>;
     </script>
     <script src="week_view.js" defer></script>
 
