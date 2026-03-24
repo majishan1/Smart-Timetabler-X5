@@ -54,7 +54,7 @@ try {
                 'completed_at' => $row['completed_at'],
                 'tags' => [] 
             ];
-        } // <--- THIS WAS THE MISSING BRACE YOUR TEAMMATE FORGOT!
+        } 
 
         if (!empty($row['tag_name'])) {
             $todos[$id]['tags'][] = [
