@@ -33,7 +33,7 @@ try {
     $events = $statement->fetchAll(PDO::FETCH_ASSOC);
 
     // SQL for the ToDo events
-    $td_sql = "SELECT ToDo.*, Tags.color
+    $td_sql = "SELECT ToDo.*, MAX(Tags.color) AS color
             FROM ToDo
             LEFT JOIN ToDo_Tags ON ToDo_Tags.taskID = ToDo.taskID
             LEFT JOIN Tags ON Tags.TagID = ToDo_Tags.TagID

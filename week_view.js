@@ -2,26 +2,43 @@ document.getElementById('next_week').addEventListener('click', function() {new_w
 document.getElementById('today').addEventListener('click', function() {jump_today()});
 document.getElementById('prev_week').addEventListener('click', function() {new_week(-1)});
 
+function page_open() {
+    /**
+     * Generates time column, shows time line, and shows current week for when the page is loaded
+     */
+    generate_times();
+    calc_and_show_cur_time();
+    jump_today();
+}
+
 
 function jump_today() {
+    /**
+     * Resets week offset to 0 so that the current week is shown
+     */
     week_offset = 0;
     new_week(0);
 }
 
 async function new_week(offset_change) {
+    /**
+     * Function used to update week whenever one of the buttons at the top of the page are pressed
+     */
     week_offset += offset_change;
 
     let week_items = await get_week_items();
     if (!week_items) return;
     let week_events = week_items[0];
     let week_tasks = week_items[1];
+    let week_assignments = week_items[2];
 
     remove_events();
     update_tasks(week_events);
     update_tasks(week_tasks);
+    update_tasks(week_assignments);
 
 
-    handle_collisions(check_collisions(week_events.concat(week_tasks)));
+    handle_collisions(check_collisions(week_events.concat(week_tasks).concat(week_assignments)));
 
     remove_date_bar();
     set_date_bar();
@@ -30,6 +47,10 @@ async function new_week(offset_change) {
 }
 
 async function get_week_items() {
+    /**
+     * Uses AJAX approach to query all items necessary in a given week - reducing load of information on browser when querying the entire database on page load
+     * Asynchronous function so that await command can be used, so data only attempted to be shown when it is loaded
+     */
     let week_start = get_start_of_week();
 
     let week_end = new Date(week_start);
@@ -37,13 +58,16 @@ async function get_week_items() {
     week_end.setHours(23, 59, 59);
 
     try {
-        let response = await fetch(`get_week_items.php?start=${dt_to_SQL_format(week_start)}&end=${dt_to_SQL_format(week_end)}`)
+        let response = await fetch(`get_week_items.php?start=${encodeURIComponent(dt_to_SQL_format(week_start))}&end=${encodeURIComponent(dt_to_SQL_format(week_end))}`)
         let data = await response.json();
 
         if (data.error) {
             console.error("Server Error:", data.error);
             return;
         }
+
+        /* Uses forEach functions on the returned arrays so that Dates objects are only created once for each event
+           Also changes some dictionary keys for ease of processing later in the program */
 
         let week_events = data.events;
         week_events.forEach(event => {
@@ -75,6 +99,9 @@ async function get_week_items() {
 }
 
 function get_start_of_week() {
+    /**
+     * Gets the start date of a given week
+     */
     let target_date = new Date();
     target_date.setDate(target_date.getDate() + week_offset * 7);
     let day_of_target = target_date.getDay();
@@ -86,10 +113,17 @@ function get_start_of_week() {
 }
 
 function remove_events() {
+    /**
+     * Removes all of the events on the calendar so that new ones can be shown instead
+     */
     document.querySelectorAll('.event_block, .extended_block').forEach(event => event.remove());
 }
 
 function update_tasks(events) {
+    /**
+     * Creates an event block and an extended block for each element in a given week and appends them to their respective column
+     * Handles events from different tables in separate blocks
+     */
     for (var i = 0; i < events.length; i++) {
         let event = events[i];
 
@@ -106,17 +140,23 @@ function update_tasks(events) {
 
         // For the standard (unselected) event blocks
         let new_event_div = document.createElement('div');
-        new_event_div.className = "event_block " + event.type.toUpperCase();
+        new_event_div.className = "event_block ";
         if (event.tskType === 'event') {
+            new_event_div.className += event.type.toUpperCase();
             new_event_div.id = "ev" + event.EventID;
             new_event_div.textContent = event.module;
         }
         else if (event.tskType === 'task') {
             new_event_div.id = "tk" + event.taskID;
             new_event_div.textContent = event.title;
-            new_event_div.style.backgroundColor = `color-mix(in srgb , ${event.color} 30%, white 70%)`;
-            new_event_div.style.borderColor = `color-mix(in srgb , ${event.color} 20%, white 80%)`;
-            new_event_div.style.borderLeftColor = event.color;
+            new_event_div.style.backgroundColor = `color-mix(in srgb , ${event.color || '#808080'} 30%, white 70%)`;
+            new_event_div.style.borderColor = `color-mix(in srgb , ${event.color || '#808080'} 20%, white 80%)`;
+            new_event_div.style.borderLeftColor = event.color || '#808080';
+        }
+        else if (event.tskType === 'assignment') {
+            new_event_div.className += 'assignment';
+            new_event_div.id = "as" + event.AssignmentID;
+            new_event_div.textContent = event.title;
         }
 
         new_event_div.style.top = mins_into_day + "px"
@@ -134,14 +174,14 @@ function update_tasks(events) {
         let end_t = end_time.toLocaleTimeString([], min_hour);
 
 
-        extended_event_div.className = event.type.toUpperCase() + " extended_block";
+        extended_event_div.className = "extended_block ";
         if (event.tskType === 'event') {
-
+            extended_event_div.className += event.type.toUpperCase();
             extended_event_div.id = "eev" + event.EventID;        
             extended_event_div.innerHTML = `
             <div class="ext_header">
                 <h3>${escapeHTML(event.module)}</h3>
-                <button type="button" class="close_button" onclick="hide_extended('${escapeHTML('ev' + event.EventID)}')">&times;</button>
+                <button type="button" class="close_button" onclick="hide_extended('${escapeHTML(extended_event_div.id)}')">&times;</button>
             </div>
             <div class="ext_body">
                 <p><strong>Type: </strong>${escapeHTML(event.type)}</p>
@@ -150,22 +190,34 @@ function update_tasks(events) {
                 <p><strong>Staff: </strong>${escapeHTML(event.staff || 'TBC')}</p>
             </div>`
         }
-
         else if (event.tskType === 'task') {
             extended_event_div.id = "etk" + event.taskID;
             extended_event_div.innerHTML = `
             <div class="ext_header">
                 <h3>${escapeHTML(event.title)}</h3>
-                <button type="button" class="close_button" onclick="hide_extended('${escapeHTML('tk' + event.taskID)}')">&times;</button>
+                <button type="button" class="close_button" onclick="hide_extended('${escapeHTML(extended_event_div.id)}')">&times;</button>
             </div>
             <div class="ext_body">
                 <p><strong>Type: </strong>${escapeHTML(event.type)}</p>
-                <p><strong>Description: </strong>${escapeHTML(event.description)}</p>
+                <p><strong>Description: </strong>${escapeHTML(event.description || 'N/A')}</p>
                 <p><strong>Time: </strong>${escapeHTML(start_t)} - ${escapeHTML(end_t)}</p>
             </div>`
-            extended_event_div.style.backgroundColor = `color-mix(in srgb , ${event.color} 30%, white 70%)`;
-            extended_event_div.style.borderColor = `color-mix(in srgb , ${event.color} 20%, white 80%)`;
-            extended_event_div.style.borderLeftColor = event.color;
+            extended_event_div.style.backgroundColor = `color-mix(in srgb , ${event.color || '#808080'} 30%, white 70%)`;
+            extended_event_div.style.borderColor = `color-mix(in srgb , ${event.color || '#808080'} 20%, white 80%)`;
+            extended_event_div.style.borderLeftColor = event.color || '#808080';
+        }
+        else if (event.tskType === 'assignment') {
+            extended_event_div.className += 'assignment';
+            extended_event_div.id = 'eas' + event.AssignmentID;
+            extended_event_div.innerHTML = `
+            <div class="ext_header">
+                <h3>${escapeHTML(event.title)}</h3>
+                <button type="button" class="close_button" onclick="hide_extended('${escapeHTML(extended_event_div.id)}')">&times;</button>
+            </div>
+            <div class="ext_body">
+                <p><strong>Deadline: </strong>${escapeHTML(start_t)}</p>
+                <p><strong>Description: </strong>N/A</p>
+            </div>`
         }
 
         extended_event_div.style.visibility = "hidden";
@@ -175,6 +227,9 @@ function update_tasks(events) {
  
 
 function check_collisions(events) {
+    /**
+     * Iterates through all the events being shown and notes any event groups that overlap
+     */
     let colliding_clusters = [];
     let cur_cluster = [];
     let cur_cluster_end = 0;
@@ -212,6 +267,10 @@ function check_collisions(events) {
 }
 
 function handle_collisions(collisions_arr) {
+    /**
+     * Takes any colliding items as a parameter and creates lanes based on the number of overlapping events at one time
+     * Once the maximum number of lanes is calculated, it calculates the width of the elements needed to show them all, and uses the lane number to find the indent the event needs
+     */
     for (var i = 0; i < collisions_arr.length; i++) {
         let no_colliding = collisions_arr[i].length;
         let lanes = [];
@@ -242,7 +301,9 @@ function handle_collisions(collisions_arr) {
         let ev_widths = 97.5 / total_lanes;
         for (var l = 0; l < collisions_arr[i].length; l++) {
             let ev = collisions_arr[i][l];
-            let ev_id = (ev.tskType === 'task')? 'tk' + ev.taskID: 'ev' + ev.EventID;
+            if (ev.tskType === 'event') ev_id = 'ev' + ev.EventID;
+            else if (ev.tskType === 'task') ev_id = 'tk' + ev.taskID;
+            else ev_id = 'as' + ev.AssignmentID;
             let ev_block = document.getElementById(ev_id);
             if (ev_block) {
                 ev_block.style.width = ev_widths + "%";
@@ -253,6 +314,9 @@ function handle_collisions(collisions_arr) {
 }
 
 function remove_date_bar() {
+    /**
+     * Deletes all of the dates for the current week so that new ones can be put in their place
+     */
     let day_container = document.getElementById('-1')
     while (day_container.children.length > 1) {
         day_container.removeChild(day_container.children[1]);
@@ -260,6 +324,10 @@ function remove_date_bar() {
 }
 
 function set_date_bar() {
+    /**
+     * Shows the days of the week with their respective date at the top of the calendar section
+     * Highlights the current day if week_offset is 0
+     */
     let this_week_s = get_start_of_week();
     let days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     let titles_div = document.getElementById('-1');
@@ -282,12 +350,18 @@ function set_date_bar() {
 }
 
 function find_month() {
+    /**
+     * Finds month of the first day of the week
+     */
     let week_start = get_start_of_week();
     let month_container = document.getElementById('month');
     month_container.textContent = week_start.toLocaleString('default', {month: 'long'});
 }
 
 function cur_time_shown() {
+    /**
+     * Determines if the current week is being shown in the week view, then shows the time line if it is said week (otherwise hides it)
+     */
     let time_line = document.getElementById("cur_time");
     let marker1 = document.getElementById('marker1');
     let marker2 = document.getElementById('marker2');
@@ -309,17 +383,28 @@ function cur_time_shown() {
 }
 
 function get_line_height() {
+    /**
+     * Calculates current time and the line offset down the day
+     */
     let date_now = new Date();
     let today = date_now.getDay() + 1;
     return [date_now.getHours() * 60 + date_now.getMinutes(), today];
 }
 
 function calc_and_show_cur_time() {
+    /**
+     * Uses current time to create a horizontal rule element to show time with circles to show the day
+     */
     let time_data = get_line_height();
     let line_height = time_data[0];
     let today = time_data[1];
 
-    let week_box = document.getElementById('WeekID');
+    let week_box = document.querySelector('#WeekID');
+
+    // Finds the flex size of the members of members of the week view, where the time line spans
+    let time_col_flex = parseFloat(window.getComputedStyle(document.querySelector('.times')).flexGrow);
+    let day_col_flex = parseFloat(window.getComputedStyle(document.querySelector('.days')).flexGrow);
+
     let time_line = document.createElement('hr');
     let marker1 = document.createElement('div');
     let marker2 = document.createElement('div');
@@ -336,16 +421,35 @@ function calc_and_show_cur_time() {
     marker1.style.top = line_height + "px";
     marker2.style.top = line_height + "px";
 
-    marker1.style.left = 100/52 * (3 + 7 * (today - 1)) + "%";
-    marker2.style.left = 100/52 * (3 + 7 * today) + "%";
+    let total_width = time_col_flex + (document.getElementsByClassName('days').length) * day_col_flex;
+    marker1.style.left = 100/total_width * (time_col_flex + day_col_flex * (today - 1)) + "%";
+    marker2.style.left = 100/total_width * (time_col_flex + day_col_flex * today) + "%";
 
 
     week_box.appendChild(marker1);
     week_box.appendChild(marker2);
     week_box.appendChild(time_line);
+
+    // Scrolls the page to the current time
+    let cal_box = document.querySelector('.calendarContainer');
+    cal_box.scrollTo(0, ((line_height > 60)? line_height - 60: line_height));
+}
+
+function generate_times() {
+    // Fills out the time column of the calendar with the times of day
+    let time_col = document.getElementById('7');
+    for (var i = 0; i < 24; i++) {
+        let time = document.createElement('div')
+        time.className = "time";
+        time.textContent = i > 9 ? i + ":00": "0" + i + ":00";
+        time_col.appendChild(time);
+}
 }
 
 function show_extended(id) {
+    /**
+     *  Sets all event blocks to hidden, then shows the selected event block - blurs background
+     */
     let extended_boxes = document.getElementsByClassName('extended_block');
     for (var i = 0; i < extended_boxes.length; i++) {
         extended_boxes[i].style.visibility = "hidden";
@@ -356,12 +460,18 @@ function show_extended(id) {
 }
 
 function hide_extended(id) {
-    let extended_box = document.getElementById('e' + id);
+    /** 
+     * Hides the selected extended event block amd unblurs the background
+     */
+    let extended_box = document.getElementById(id);
     extended_box.style.visibility = "hidden";
     document.querySelector('.calendarContainer').style.filter = "blur(0px)";
 }
 
 function escapeHTML(text) {
+    /** 
+     * Makes sure that any html tags entered in a string is not parsed when added to the script using innerHTML
+     */
     let map = {
         '&': '&amp;',
         '<': '&lt;',
@@ -378,21 +488,5 @@ function dt_to_SQL_format(date) {
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 
-// Shows the days of the week and dates when program loaded
-
-jump_today();
-calc_and_show_cur_time();
-
-let time_col = document.getElementById('7');
-for (var i = 0; i < 24; i++) {
-    let time = document.createElement('div')
-    time.className = "time";
-    time.textContent = i > 9 ? i + ":00": "0" + i + ":00";
-    time_col.appendChild(time);
-}
-
-// Scroll to show the current time of day
-let today = new Date();
-let cal_box = document.querySelector('.calendarContainer');
-let line_height = today.getHours() * 60 + today.getMinutes();
-cal_box.scrollTo(0, ((line_height > 60)? line_height - 60: line_height));
+// Calles page_open() when at the earliest possible opportunity (before CSS loaded)
+document.addEventListener('DOMContentLoaded', function() {page_open()});

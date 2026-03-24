@@ -157,9 +157,14 @@ if (!isset($_SESSION['user_id'])) {
             font-size: 0.8em;
             overflow: hidden;
 
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            text-align: center;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            text-overflow: ellipsis;
+
+            word-break: break-word;
+            hyphens: auto;
         }
 
         .event_block:hover {
@@ -172,6 +177,7 @@ if (!isset($_SESSION['user_id'])) {
         .event_block.DROP-IN, .extended_block.DROP-IN {background-color: #e0fbfc; border-color: #c2dfe3; border-left-color: #98c1d9;}
         .event_block.EXAMPLES, .extended_block.EXAMPLES {background-color: #ffd6a5; border-color: #ffc685; border-left-color: #f4a261;}
         .event_block.WORKSHOP, .extended_block.WORKSHOP {background-color: #fff1e6; border-color: #fde2e4; border-left-color: #e76f51;}
+        .event_block.assignment, .extended_block.assignment {background-color: #fdeaea; border-color: #f9dcdc; border-left-color: #d32f2f;}
 
         .extended_block {
             position: fixed;
