@@ -12,11 +12,24 @@ $events = [];
 $err = "";
 
 try {
-    $sql = "SELECT * FROM Events WHERE UserID = :u_ID ORDER BY start_time ASC";
-    $statement = $conn->prepare($sql);
+    // SQL for the University calendar events
+    $ev_sql = "SELECT * FROM Events WHERE UserID = :u_ID ORDER BY start_time ASC";
+    $statement = $conn->prepare($ev_sql);
     $statement->execute(['u_ID' => $current_uID]);
 
     $events = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+    // SQL for the ToDo events
+    $td_sql = "SELECT ToDo.*, Tags.color
+            FROM ToDo
+            LEFT JOIN ToDo_Tags ON ToDo_Tags.taskID = ToDo.taskID
+            LEFT JOIN Tags ON Tags.TagID = ToDo_Tags.TagID
+            WHERE ToDo.UserID = :u_ID AND ToDo.is_complete = 0
+            ORDER BY ToDo.deadline ASC";
+    $statement = $conn->prepare($td_sql);
+    $statement->execute(['u_ID' => $current_uID]);
+
+    $toDo = $statement->fetchall(PDO::FETCH_ASSOC);
 }
 catch (PDOException $e){
     $err = "Error: " . $e->getMessage();
@@ -61,7 +74,6 @@ catch (PDOException $e){
             padding: 20px;
             background: #fAf9f6;
             color: #264653;
-            padding-bottom: 80px;
         }
 
         h1 {
@@ -76,7 +88,7 @@ catch (PDOException $e){
         }
 
         .calendarContainer {
-            height: 80vh;
+            height: 73vh;
             overflow-y: auto;
             overflow-x: hidden;
 
@@ -320,7 +332,10 @@ catch (PDOException $e){
     <script>
         let week_offset = 0;
         let week_events = null;
-        const events = <?php echo json_encode($events) ?>;
+        let week_tasks = null;
+        let week_due = null;
+        const events = <?php echo json_encode($events)?>;
+        const toDo = <?php echo json_encode($toDo)?>;
     </script>
     <template id="day-header-template">
     <div class="day_name"></div>
@@ -387,6 +402,6 @@ catch (PDOException $e){
             <div id='6' class='days'></div>
         </div>
     </div>
-    <?php include 'toolbar.php'; ?>
+    <?php include 'toolbar.php';?>
 </body>
 </html>
