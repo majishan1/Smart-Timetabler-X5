@@ -4,7 +4,9 @@
 
 // Force UK Timezone so PHP and Python are  synced
 date_default_timezone_set('Europe/London');
-$current_time_str = date('Y-m-d H:i:s');
+$current_timestamp = time();
+$rounded_timestamp = ceil($current_timestamp / (15 * 60)) * (15 * 60);
+$current_time_str = date('Y-m-d H:i:s', $rounded_timestamp);
 
 if (!isset($conn) || !isset($current_user_id)) {
     die("reschedule_tasks.php requires \$conn and \$current_user_id to be set first.");

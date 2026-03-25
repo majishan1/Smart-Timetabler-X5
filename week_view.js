@@ -75,7 +75,11 @@ async function get_week_items() {
 
         let week_tasks = data.toDo;
         week_tasks.forEach(task => {
-            task.start_time = new Date(task.deadline.replace(' ', 'T'));
+            // the deadline is when it ends, we must subtract duration to find when it starts
+            let end_time = new Date(task.deadline.replace(' ', 'T'));
+            let duration_mins = parseInt(task.duration) || 30; // Default to 30 mins just in case
+            
+            task.start_time = new Date(end_time.getTime() - (duration_mins * 60000));
             task.tskType = 'task';
             delete task.deadline;
         });
