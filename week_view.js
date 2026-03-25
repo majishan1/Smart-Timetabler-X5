@@ -1,6 +1,4 @@
-document.getElementById('next_week').addEventListener('click', function() {new_week(1)});
-document.getElementById('today').addEventListener('click', function() {jump_today()});
-document.getElementById('prev_week').addEventListener('click', function() {new_week(-1)});
+
 
 function page_open() {
     /**
@@ -489,4 +487,13 @@ function dt_to_SQL_format(date) {
 }
 
 // Calles page_open() when at the earliest possible opportunity (before CSS loaded)
-document.addEventListener('DOMContentLoaded', function() {page_open()});
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // waited for HTML to load before attaching buttons 
+    document.getElementById('next_week').addEventListener('click', function() {new_week(1)});
+    document.getElementById('today').addEventListener('click', function() {jump_today()});
+    document.getElementById('prev_week').addEventListener('click', function() {new_week(-1)});
+    
+
+    page_open();
+});

@@ -41,8 +41,8 @@ try {
         ':name' => $student_name
     ]);
     
-    // 8. Redirect to Dashboard
-    header("Location: index.php");
+    // Redirect to Dashboard
+    header("Location: dashboard.php");
     exit();
 
 } catch (PDOException $e) {
