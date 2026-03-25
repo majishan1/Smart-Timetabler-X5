@@ -245,15 +245,11 @@ try {
             
             <div class="todo-card <?php echo $card_class; ?> <?php echo ($todo['is_complete'] == 1) ? 'completed-task' : ''; ?>">
                 
-                <div class="checkbox-container">
-                    <?php if ($todo['is_complete'] == 0): ?>
-                        <form method="POST" action="toggle_todo.php">
-                            <input type="hidden" name="taskID" value="<?php echo $todo['taskID']; ?>">
-                            <input type="checkbox" title="Mark as complete" onchange="this.form.submit()">
-                        </form>
-                    <?php else: ?>
-                        <input type="checkbox" checked disabled title="Task completed">
-                    <?php endif; ?>
+            <div class="checkbox-container">
+                    <form method="POST" action="toggle_todo.php">
+                        <input type="hidden" name="taskID" value="<?php echo $todo['taskID']; ?>">
+                        <input type="checkbox" title="Toggle completion" onchange="this.form.submit()" <?php echo ($todo['is_complete'] == 1) ? 'checked' : ''; ?>>
+                    </form>
                 </div>
                 
                 <div class="todo-content">

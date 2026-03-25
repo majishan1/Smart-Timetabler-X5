@@ -13,15 +13,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $task_id = $_POST['taskID'];
 
     try {
-        $sql = "UPDATE ToDo 
-                SET is_complete = 1, completed_at = NOW()
-                WHERE taskID = :taskID AND UserID = :uid";
+        // Check the current status of the task
+        $check_sql = "SELECT is_complete FROM ToDo WHERE taskID = :taskID AND UserID = :uid";
+        $check_stmt = $conn->prepare($check_sql);
+        $check_stmt->execute([':taskID' => $task_id, ':uid' => $current_user_id]);
+        $task = $check_stmt->fetch(PDO::FETCH_ASSOC);
 
-        $stmt = $conn->prepare($sql);
-        $stmt->execute([
-            ':taskID' => $task_id,
-            ':uid' => $current_user_id
-        ]);
+        if ($task) {
+            // Decide what the new status should be
+            if ($task['is_complete'] == 1) {
+                // If it was done, mark it incomplete and clear the timestamp
+                $update_sql = "UPDATE ToDo SET is_complete = 0, completed_at = NULL WHERE taskID = :taskID AND UserID = :uid";
+            } else {
+                // If it was incomplete, mark it done and record the time
+                $update_sql = "UPDATE ToDo SET is_complete = 1, completed_at = NOW() WHERE taskID = :taskID AND UserID = :uid";
+            }
+
+
+            $update_stmt = $conn->prepare($update_sql);
+            $update_stmt->execute([
+                ':taskID' => $task_id,
+                ':uid' => $current_user_id
+            ]);
+        }
 
         header("Location: view_todo.php");
         exit();
@@ -32,7 +46,5 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 } else {
     header("Location: view_todo.php");
     exit();
-}
-?>
 }
 ?>
