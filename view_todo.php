@@ -186,6 +186,23 @@ try {
         .completed-task .todo-title {
             text-decoration: line-through;
         }
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #dc3545;
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 5px;
+            transition: transform 0.2s;
+            opacity: 0.5;
+        }
+        .delete-btn:hover {
+            transform: scale(1.2);
+            opacity: 1;
+        }
+        .delete-form {
+            margin-left: auto; /* Pushes the button all the way to the right */
+        }
     </style>
 </head>
 <body>
@@ -245,7 +262,7 @@ try {
             
             <div class="todo-card <?php echo $card_class; ?> <?php echo ($todo['is_complete'] == 1) ? 'completed-task' : ''; ?>">
                 
-            <div class="checkbox-container">
+                <div class="checkbox-container">
                     <form method="POST" action="toggle_todo.php">
                         <input type="hidden" name="taskID" value="<?php echo $todo['taskID']; ?>">
                         <input type="checkbox" title="Toggle completion" onchange="this.form.submit()" <?php echo ($todo['is_complete'] == 1) ? 'checked' : ''; ?>>
@@ -281,6 +298,12 @@ try {
                         </div>
                     <?php endif; ?>
                 </div>
+
+                <form method="POST" action="delete_todo.php" class="delete-form" onsubmit="return confirm('Are you sure you want to permanently delete this task?');">
+                    <input type="hidden" name="taskID" value="<?php echo $todo['taskID']; ?>">
+                    <button type="submit" class="delete-btn" title="Delete Task">🗑️</button>
+                </form>
+
             </div>
             <?php
         }
