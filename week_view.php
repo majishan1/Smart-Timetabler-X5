@@ -16,7 +16,6 @@ if (!isset($_SESSION['user_id'])) {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: Arial,sans-serif
         }
 
         html {
@@ -39,24 +38,39 @@ if (!isset($_SESSION['user_id'])) {
         }
 
         body {
-            padding: 20px;
-            background: #fAf9f6;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: #f4f7f6;
             color: #264653;
+            padding: 20px;
+            max-width: 100vw;
+            margin: 0 auto;
+            padding-bottom: 80px;
         }
 
         h1 {
             text-align: center;
-            font-size: 2.8em;
-            margin-bottom: 25px;
-            color: #264653;
+            font-size: 2.3em;
+            font-weight: bold;
+            color: #333;
         }    
         
         h2 {
-            margin: 5px;
+            margin: 0;
+            color: #333;
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+
+        .header {
+            display: flex;
+            justify-content: center;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
         }
 
         .calendarContainer {
-            height: 73vh;
+            height: 74vh;
             overflow-y: auto;
             overflow-x: hidden;
 
@@ -80,7 +94,7 @@ if (!isset($_SESSION['user_id'])) {
             background-color: #264653;
             border-radius: 10px;
             border: 3px solid #f0efeb;
-        }
+        } 
 
         .week {
             display: flex;
@@ -258,43 +272,57 @@ if (!isset($_SESSION['user_id'])) {
             display: flex;
             flex-direction: row;
             justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
         }
 
         .change_button_container {
             display: flex;
             gap: 0;
+            align-items: center;
         }
 
         .week_change {
-            background-color: #9dd3a1;
-            color: #264653;
-            font-size: 0.9em;
+            background-color: #f0efeb;
+            color: #999589;
+            font-size: 1em;
+            font-weight: bold;
             text-align: center;
-            border: none;
-            padding: 10px 20px;
-            margin: 5px 0px 5px 0px;
-            transition: background-color 0.2s;
+            border: 2px solid #d8d2c2;
+            padding: 8px 15px;
+            box-shadow: 0 2px 10px #0000000d;
+            transition: all 0.2s ease;
+            cursor: pointer;
         }
 
         .week_change:hover {
-            background-color: #2a9d8f
+            color: #f0efeb;
+            background-color: #d8d2c2;
+            box-shadow: 0 4px 12px #d8d2c271;
         }
 
         #today {
-            background-color: #edd3a7;
+            color: #f0efeb;
+            background-color: #d8d2c2;
         }
 
         #today:hover {
-           background-color: #e76f51;
+            color: #999589;
+            background-color: #f0efeb;
+            transform: scaleY(1.05);
         }
 
-        #prev_week {
-            border-radius: 8px 0px 0px 8px;
+        #today:active {
+            transform: scaleY(1);
         }
 
-        #next_week {
-            border-radius: 0px 8px 8px 0px;
-        }
+        #prev_week {border-radius: 8px 0px 0px 8px;}
+        #prev_week:hover {transform: translateX(-3px);border-radius: 8px;}
+        #prev_week:active {transform: translateX(-1px);}
+
+        #next_week {border-radius: 0 8px 8px 0;}
+        #next_week:hover {transform: translateX(3px); border-radius: 8px;}
+        #next_week:active {transform: translateX(1px);}
 
         #invis {
             flex: 3;
@@ -310,13 +338,13 @@ if (!isset($_SESSION['user_id'])) {
 
 </head>
 <body>
-    <h1>Week View</h1>
+    <div class="header"><h1>Week View</h1></div>
     <div class="top_info">
-        <h2 id="month"></h2>
+        <h2>📅<span id="month"></span></h2>
         <div class="change_button_container">
-            <button type="button" class="week_change" id="prev_week">Prev Week</button>
+            <button type="button" class="week_change" id="prev_week">&lt;</button>
             <button type="button" class="week_change" id="today">Today</button>
-            <button type="button" class="week_change" id="next_week">Next Week</button>
+            <button type="button" class="week_change" id="next_week">&gt;</button>
         </div>
     </div>
     <div class='calendarContainer'>
