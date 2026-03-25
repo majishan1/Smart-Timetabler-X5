@@ -21,7 +21,7 @@ if (!isset($_SESSION['user_id'])) {
 $current_user_id = (string) $_SESSION['user_id'];
 
 
-$stmt = $conn->prepare("SELECT display_name, postcode, preferred_transport FROM User_Settings WHERE UserID = :uid LIMIT 1");
+$stmt = $conn->prepare("SELECT display_name, postcode, preferred_transport, last_synced FROM User_Settings WHERE UserID = :uid LIMIT 1");
 $stmt->execute([':uid' => $current_user_id]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -29,6 +29,15 @@ $display_name = !empty($user['display_name']) ? $user['display_name'] : 'Student
 $home_postcode = !empty($user['postcode']) ? $user['postcode'] : 'M13 9PL';
 $transport_mode = !empty($user['preferred_transport']) ? $user['preferred_transport'] : 'public_transport';
 
+$last_synced_str = "Never synced";
+if (!empty($user['last_synced'])) {
+    $sync_time = strtotime($user['last_synced']);
+    if (date('Y-m-d', $sync_time) == $current_date_only) {
+        $last_synced_str = "Today at " . date('H:i', $sync_time);
+    } else {
+        $last_synced_str = date('d M \a\t H:i', $sync_time);
+    }
+}
 // Transport Emoji Mapping
 $transport_emojis = [
     'public_transport' => '🚌 Bus/Tram',
@@ -208,7 +217,11 @@ else { $greeting = "Good Evening"; }
             </div>
 
             <div class="dash-card">
-                <h3>📝 Canvas Assignments</h3>
+
+                <h3 style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>📝 Canvas Assignments</span>
+                    <span style="font-size: 0.7em; color: #888; font-weight: normal;">Synced: <?php echo $last_synced_str; ?></span>
+                </h3>
                 
                 <?php if ($deadline_error): ?>
                     <div class="empty-state" style="color:red; font-size: 0.9em; text-align:left;">
@@ -249,6 +262,21 @@ else { $greeting = "Good Evening"; }
         }
         setInterval(updateClock, 1000);
         updateClock(); 
+        // Trigger the background Auto-Sync
+        document.addEventListener("DOMContentLoaded", function() {
+            fetch('auto_sync.php')
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Auto-Sync:", data.message);
+
+                    if (data.status === "success") {
+                        console.log("New tasks found! Updating dashboard...");
+
+                        location.reload(); //auto reloads the poage if resync
+                    }
+                })
+                .catch(error => console.error("Sync failed", error));
+        });
     </script>
 </body>
 </html>
