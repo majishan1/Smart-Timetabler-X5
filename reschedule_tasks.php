@@ -14,6 +14,20 @@ $rescheduled_count = 0;
 $reschedule_error = "";
 
 try {
+    // Delete tasks completed > 24 hours ago
+    $delete_threshold = date('Y-m-d H:i:s', strtotime('-1 day'));
+
+    $cleanup_tags_sql = "DELETE ToDo_Tags FROM ToDo_Tags 
+                         INNER JOIN ToDo ON ToDo_Tags.taskID = ToDo.taskID 
+                         WHERE ToDo.UserID = :uid AND ToDo.is_complete = 1 AND ToDo.completed_at < :threshold";
+    $cleanup_tags_stmt = $conn->prepare($cleanup_tags_sql);
+    $cleanup_tags_stmt->execute([':uid' => $current_user_id, ':threshold' => $delete_threshold]);
+
+    $cleanup_tasks_sql = "DELETE FROM ToDo 
+                          WHERE UserID = :uid AND is_complete = 1 AND completed_at < :threshold";
+    $cleanup_tasks_stmt = $conn->prepare($cleanup_tasks_sql);
+    $cleanup_tasks_stmt->execute([':uid' => $current_user_id, ':threshold' => $delete_threshold]);
+
     // Get Users Work Hours
     $settings_stmt = $conn->prepare("SELECT start_hour, end_hour FROM User_Settings WHERE UserID = :uid LIMIT 1");
     $settings_stmt->execute([':uid' => $current_user_id]);
