@@ -492,12 +492,23 @@ function dt_to_SQL_format(date) {
 
 // Calles page_open() when at the earliest possible opportunity (before CSS loaded)
 document.addEventListener('DOMContentLoaded', function() {
-    
-    // waited for HTML to load before attaching buttons 
+
+    // 1. Now that the HTML is loaded, it's safe to attach the buttons!
+    document.getElementById('month').addEventListener('click', function() {document.getElementById('date_selector').showPicker()})
+    document.getElementById('date_selector').addEventListener('change', function() {
+        let selected_date = new Date(this.value);
+        let date_delta = selected_date.getTime() - new Date().getTime();
+        let diff_days = date_delta / (1000 * 3600 * 24);
+        console.log(diff_days / 7);
+        week_offset = Math.round(diff_days / 7);
+        week_offset = (selected_date.getDay() === 0)? week_offset + 1: week_offset;
+        console.log(week_offset);
+        new_week(0);
+    })
     document.getElementById('next_week').addEventListener('click', function() {new_week(1)});
     document.getElementById('today').addEventListener('click', function() {jump_today()});
     document.getElementById('prev_week').addEventListener('click', function() {new_week(-1)});
     
-
+    // 2. Start drawing the calendar
     page_open();
 });

@@ -16,6 +16,7 @@ if (!isset($_SESSION['user_id'])) {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
         }
 
         html {
@@ -38,7 +39,6 @@ if (!isset($_SESSION['user_id'])) {
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
             background-color: #f4f7f6;
             color: #264653;
             padding: 20px;
@@ -53,13 +53,6 @@ if (!isset($_SESSION['user_id'])) {
             font-weight: bold;
             color: #333;
         }    
-        
-        h2 {
-            margin: 0;
-            color: #333;
-            font-size: 1.8em;
-            font-weight: bold;
-        }
 
         .header {
             display: flex;
@@ -70,7 +63,7 @@ if (!isset($_SESSION['user_id'])) {
         }
 
         .calendarContainer {
-            height: 74vh;
+            height: 73.5vh;
             overflow-y: auto;
             overflow-x: hidden;
 
@@ -164,7 +157,7 @@ if (!isset($_SESSION['user_id'])) {
             box-shadow: 0 2px 5px #00000080;
             box-sizing: border-box;
 
-            padding: 4px 6px;
+            padding: 0 6px;
             color: #264653;
             background-color: #ebcbe6;
             border-color: #fbf3f6;
@@ -276,6 +269,18 @@ if (!isset($_SESSION['user_id'])) {
             margin-bottom: 10px;
         }
 
+        .date_input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            opacity: 0;
+            font-size: 1.8em;
+            cursor: pointer;
+            pointer-events: none;
+            z-index: 5;
+        }
+
         .change_button_container {
             display: flex;
             gap: 0;
@@ -300,6 +305,23 @@ if (!isset($_SESSION['user_id'])) {
             background-color: #d8d2c2;
             box-shadow: 0 4px 12px #d8d2c271;
         }
+
+        #date_container {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        #month {
+            margin: 0;
+            color: #333;
+            font-size: 1.8em;
+            font-weight: bold;
+            transition: color 0.2s;
+            z-index: 10;
+        }
+
+        #month:hover {color: #e76f51}
 
         #today {
             color: #f0efeb;
@@ -340,7 +362,10 @@ if (!isset($_SESSION['user_id'])) {
 <body>
     <div class="header"><h1>Week View</h1></div>
     <div class="top_info">
-        <h2>📅<span id="month"></span></h2>
+        <div id="date_container">
+            <span id="month"></span>
+            <input type="date" class="date_input" id="date_selector"></input>
+        </div>
         <div class="change_button_container">
             <button type="button" class="week_change" id="prev_week">&lt;</button>
             <button type="button" class="week_change" id="today">Today</button>
