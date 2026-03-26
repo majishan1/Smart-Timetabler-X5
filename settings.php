@@ -96,7 +96,7 @@ try {
 
         $sync_message = "";
 
-      
+
         if (!empty($settings['canvas_url'])) {
             $ch = curl_init('https://timetable-api-ebyk.onrender.com/parse_canvas');
             $payload = json_encode(['canvas_url' => $settings['canvas_url']]);
@@ -104,11 +104,8 @@ try {
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'Content-Type: application/json',
-                'Content-Length: ' . strlen($payload)
-            ]);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 20); // Give python server time
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Content-Length: ' . strlen($payload)]);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 20); 
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
             $response = curl_exec($ch);
@@ -119,28 +116,84 @@ try {
                 $data = json_decode($response, true);
                 if (isset($data['deadlines'])) {
                     $added_count = 0;
-                    
-                    // Prepare statements for checking and inserting
                     $stmt_check = $conn->prepare("SELECT AssignmentID FROM Canvas_Assignments WHERE UserID = ? AND title = ?");
                     $stmt_insert = $conn->prepare("INSERT INTO Canvas_Assignments (UserID, title, due_date) VALUES (?, ?, ?)");
 
                     foreach ($data['deadlines'] as $task) {
-                        // Check if we already have this exact assignment saved
                         $stmt_check->execute([$current_user_id, $task['title']]);
                         if (!$stmt_check->fetch()) {
-                            // If it's brand new insert it
                             $stmt_insert->execute([$current_user_id, $task['title'], $task['due_date']]);
                             $added_count++;
                         }
                     }
-                    $sync_message = "<br>Successfully synced {$added_count} new Canvas assignments!";
+                    $sync_message .= "<br>✅ Synced {$added_count} new Canvas assignments!";
                 }
             } else {
-                $sync_message = "<br>Settings saved, but Canvas sync failed";
+                $sync_message .= "<br>❌ Canvas sync failed.";
             }
         }
 
-        $message = "Settings saved successfully." . $sync_message;
+
+        if (!empty($settings['timetable_url'])) {
+            $ch2 = curl_init('https://timetable-api-ebyk.onrender.com/parse');
+            $payload2 = json_encode(['url' => $settings['timetable_url']]);
+            
+            curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch2, CURLOPT_POST, true);
+            curl_setopt($ch2, CURLOPT_POSTFIELDS, $payload2);
+            curl_setopt($ch2, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Content-Length: ' . strlen($payload2)]);
+            curl_setopt($ch2, CURLOPT_TIMEOUT, 60); 
+            curl_setopt($ch2, CURLOPT_SSL_VERIFYPEER, false);
+
+            $response2 = curl_exec($ch2);
+            $http_code2 = curl_getinfo($ch2, CURLINFO_HTTP_CODE);
+            curl_close($ch2);
+
+            if ($http_code2 == 200 && $response2) {
+                $events = json_decode($response2, true);
+                
+                if (is_array($events) && !isset($events['error'])) {
+                    $events_imported = 0;
+                    
+                    $check_sql = "SELECT EventID FROM Events WHERE UserID = :uid AND module = :module AND start_time = :start_time";
+                    $check_stmt = $conn->prepare($check_sql);
+                    
+                    $insert_sql = "INSERT INTO Events (UserID, module, start_time, duration, type, staff, location) 
+                            VALUES (:uid, :module, :start_time, :duration, :type, :staff, :location)";
+                    $insert_stmt = $conn->prepare($insert_sql);
+
+                    foreach ($events as $event) {
+                        $final_title = $event['unit_code'] . " - " . $event['description'];
+
+                        $check_stmt->execute([
+                            ':uid' => $current_user_id,
+                            ':module' => $final_title,
+                            ':start_time' => $event['start']
+                        ]);
+
+                        if ($check_stmt->rowCount() == 0) {
+                            $insert_stmt->execute([
+                                ':uid' => $current_user_id,
+                                ':module' => $final_title,
+                                ':start_time' => $event['start'],
+                                ':duration' => (string)$event['duration'],
+                                ':type' => $event['event_type'],
+                                ':staff' => $event['staff'],
+                                ':location' => $event['location']
+                            ]);
+                            $events_imported++;
+                        }
+                    }
+                    $sync_message .= "<br>✅ Synced {$events_imported} new Timetable events!";
+                } else {
+                    $sync_message .= "<br>❌ Timetable sync returned an error.";
+                }
+            } else {
+                $sync_message .= "<br>❌ Timetable sync failed to connect.";
+            }
+        }
+
+        $message = "<strong>Settings saved successfully!</strong>" . $sync_message;
         $message_type = "success";
     }
 
