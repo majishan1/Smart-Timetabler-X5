@@ -10,7 +10,7 @@ if (!isset($_SESSION['user_id'])) {
 
 $current_user_id = $_SESSION['user_id'];
 
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['taskID'])) {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['taskID']) && isset($_POST['source_page'])) {
     $task_id = $_POST['taskID'];
 
     try {
@@ -31,6 +31,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['taskID'])) {
 
         error_log("Error deleting task: " . $e->getMessage());
     }
+    $source = $_POST['source_page'];
+    header("Location: $source");
+    exit();
 }
 
 // Instantly redirect back to the To-Do list

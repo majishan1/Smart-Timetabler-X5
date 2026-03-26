@@ -197,7 +197,14 @@ function update_tasks(events) {
             extended_event_div.innerHTML = `
             <div class="ext_header">
                 <h3>${escapeHTML(event.title)}</h3>
-                <button type="button" class="close_button" onclick="hide_extended('${escapeHTML(extended_event_div.id)}')">&times;</button>
+                <div class="ext_buttons_container">
+                    <form method="POST" action="delete_todo.php" onsubmit="return confirm('Are you sure you want to permanently delete this task?')";>
+                        <input type="hidden" name="taskID" value=${event.taskID}>
+                        <input type="hidden" name="source_page" value="week_view.php">
+                        <button type="submit" class="ext_buttons" id="del_button" title="Delete">🗑️</button>
+                    </form>
+                    <button type="button" class="ext_buttons" id="close_button" onclick="hide_extended('${escapeHTML(extended_event_div.id)}')">&times;</button>
+                </div>
             </div>
             <div class="ext_body">
                 <p><strong>Type: </strong>${escapeHTML(event.type)}</p>

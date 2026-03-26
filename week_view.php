@@ -221,18 +221,37 @@ if (!isset($_SESSION['user_id'])) {
             padding-right: 15px;
         }
 
-        .close_button {
+        .ext_buttons_container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 5%;
+        }
+
+        .ext_buttons {
             background: none;
             border: none;
-            font-size: 1.8em;
             line-height: 0.8;
-            padding-right: 5px;
             cursor: pointer;
             font-weight: bold;
             transition: transform 0.2s;
         }
 
-        .close_button:hover {
+        #del_button {
+            transform: translateY(5px);
+            font-size: 1.3em;
+        }
+
+        #del_button:hover {
+            transform: scale(1.2);  
+        }
+
+        #close_button {
+            font-size: 1.8em;
+            padding-right: 5px;
+        }
+
+        #close_button:hover {
             transform: scale(1.2);
         }
 
